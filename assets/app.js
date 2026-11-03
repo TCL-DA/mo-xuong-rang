@@ -76,7 +76,8 @@
     const b = blank();
     if (!o || typeof o !== 'object') return b;
     const locHang = h => Array.isArray(h)
-      ? [chuSach(h[0], 160, 'Mục'), soSach(h[1], 0), chuSach(h[2], 16), soSach(h[3], 0), chuSach(h[4], 240)]
+      ? [chuSach(h[0], 160, 'Mục'), soSach(h[1], 0), chuSach(h[2], 16), soSach(h[3], 0),
+         chuSach(h[4], 240), Math.min(100, Math.max(0, soSach(h[5], 0)))]
       : null;
     if (Array.isArray(o.capex)) {
       b.capex = b.capex.map((goc, i) => Array.isArray(o.capex[i])
@@ -115,19 +116,43 @@
 
   /* ---------------- tính ---------------- */
 
-  function sumRows(rows) { return rows.reduce((a, r) => a + (+r[1] || 0) * (+r[3] || 0), 0); }
+  /* Một hàng: [tên, số lượng, đơn vị, đơn giá, ghi chú, VAT %].
+     gomVat = true nghĩa là đơn giá đang nhập ĐÃ gồm VAT (bóc ngược ra);
+     false nghĩa là giá chưa VAT, phải cộng thêm. */
+  function tienHang(r, gomVat) {
+    const tien = (+r[1] || 0) * (+r[3] || 0);
+    const v = (+r[5] || 0) / 100;
+    if (gomVat) { const hang = tien / (1 + v); return { hang, vat: tien - hang, tong: tien }; }
+    return { hang: tien, vat: tien * v, tong: tien * (1 + v) };
+  }
+
+  function congBang(rows, gomVat) {
+    return rows.reduce((a, r) => {
+      const x = tienHang(r, gomVat);
+      a.hang += x.hang; a.vat += x.vat; a.tong += x.tong; return a;
+    }, { hang: 0, vat: 0, tong: 0 });
+  }
+
+  const gomVatCapex = () => !!(+S.thue.muaCapexGomVat);
+  const gomVatOpex = () => !!(+S.thue.muaOpexGomVat);
+  const gomVatCua = path => (path.split('.')[0] === 'capex' ? gomVatCapex() : gomVatOpex());
+  function sumRows(rows) { return congBang(rows, false).hang; }
 
   function tinh() {
     const g = S.giaVon, l = S.giaVonLy, d = S.doanhThu, t = S.giaThiet;
 
-    // vốn đầu tư
-    const nhom = S.capex.map(sumRows);
+    // vốn đầu tư — số tiền THỰC TRẢ (đã gồm VAT), kèm phần VAT tách riêng
+    const bCapex = S.capex.map(r => congBang(r, gomVatCapex()));
+    const nhom = bCapex.map(x => x.tong);
+    const vatCapex = bCapex.reduce((a, x) => a + x.vat, 0);
     const thietBi = (nhom[0] || 0) + (nhom[1] || 0);   // phần khấu hao được
     const capexGoc = nhom.reduce((a, b) => a + b, 0);
     const duPhong = capexGoc * (+t.duPhong || 0) / 100;
 
     // chi phí cố định
-    const coDinh = sumRows(S.opex);
+    const bOpex = congBang(S.opex, gomVatOpex());
+    const coDinh = bOpex.tong;
+    const vatOpex = bOpex.vat;
     const quy = coDinh * (+t.quyThang || 0);
     const vonPhaiCo = capexGoc + duPhong + quy;
 
@@ -179,9 +204,11 @@
       const tr = (+th.dnVatRa || 0) / 100;
       dtThuan = th.giaDaGomVat ? doanhThu / (1 + tr) : doanhThu;
       vatRa = dtThuan * tr;
+      // VAT đầu vào: của chi phí cố định thì lấy đúng theo cột VAT từng dòng;
+      // của nguyên liệu thì theo tỉ lệ có hoá đơn (cà phê xanh mua dân không có)
       const tv = (+th.dnVatVao || 0) / 100;
-      const chiCoHoaDon = (bienPhi + coDinh) * (+th.dnCoHoaDon || 0) / 100;
-      vatVao = tv > 0 ? chiCoHoaDon * tv / (1 + tv) : 0;
+      const nlCoHD = bienPhi * (+th.nlCoHoaDon || 0) / 100;
+      vatVao = vatOpex + (tv > 0 ? nlCoHD * tv / (1 + tv) : 0);
       thueDT = Math.max(0, vatRa - vatVao);
       const loiNhuanKT = dtThuan - (bienPhi + coDinh - vatVao) - khauHao;
       thueLai = Math.max(0, loiNhuanKT) * (+th.dnTndn || 0) / 100;
@@ -214,16 +241,23 @@
     const f = [1, 2, 3].map(i => (+t['thangChay' + i] || 0) / 100);
     const series = [{ thang: 0, tien: -(capexGoc + duPhong) }];
     let cum = -(capexGoc + duPhong), beMonth = null;
+    // Doanh nghiệp: VAT đã trả khi mua sắm được khấu trừ dần vào VAT phải nộp hàng tháng
+    let vatDuDauTu = laDN ? vatCapex : 0;
+    let thangHetVatDauTu = 0;
     for (let m = 1; m <= 120; m++) {
       const cs = m <= 3 ? f[0] : m <= 6 ? f[1] : f[2];
       const lai0 = (doanhThu - bienPhi) * cs - coDinh;
-      cum += lai0 - thueDT * cs - (lai0 > 0 ? thueLai * cs : 0);
+      const vatThang = thueDT * cs;
+      const buTru = Math.min(vatDuDauTu, vatThang);
+      vatDuDauTu -= buTru;
+      if (buTru > 0) thangHetVatDauTu = m;
+      cum += lai0 - (vatThang - buTru) - (lai0 > 0 ? thueLai * cs : 0);
       if (m <= 24) series.push({ thang: m, tien: cum });
       if (beMonth === null && cum >= 0) beMonth = m;
     }
 
     return {
-      nhom, capexGoc, duPhong, quy, vonPhaiCo, thietBi,
+      nhom, capexGoc, duPhong, quy, vonPhaiCo, thietBi, vatCapex, vatOpex, bCapex, bOpex, thangHetVatDauTu,
       coDinh, giaVonKg, giaVonLy, cXanh, cGas, cDien, cKhac, kgLoi, xanhCan, lyCaPhe,
       doanhThu, rSi, rLe, rLy, rGc, siKg, leKg, soLy, gcKg,
       bienPhi, vSi, vLe, vLy, vGc, laiGop, laiTienMat, khauHao, laiKeToan,
@@ -245,6 +279,7 @@
 
   function rowEl(r, path, onDel) {
     const tr = el('tr', 'rail');
+    const gomVat = gomVatCua(path);
 
     const tdName = el('td');
     tdName.dataset.lbl = 'Mục';
@@ -271,8 +306,18 @@
     pr.setAttribute('aria-label', r[0] + ' — đơn giá');
     tdPrice.appendChild(pr);
 
+    const tdVat = el('td', 'r'); tdVat.dataset.lbl = 'VAT';
+    const vt = inpCell(+r[5] || 0, 'w-vat', path + '.5');
+    vt.setAttribute('aria-label', r[0] + ' — thuế suất VAT phần trăm');
+    tdVat.appendChild(vt);
+    const pc = el('span', 'unit'); pc.textContent = ' %'; tdVat.appendChild(pc);
+
+    const x = tienHang(r, gomVat);
     const tdSum = el('td', 'r'); tdSum.dataset.lbl = 'Thành tiền';
-    tdSum.appendChild(el('span', 'cell-money', money((+r[1] || 0) * (+r[3] || 0))));
+    tdSum.appendChild(el('span', 'cell-money', money(x.tong)));
+    const vn = el('span', 't-note');
+    vn.textContent = x.vat ? (gomVat ? 'trong đó VAT ' : '+ VAT ') + money(x.vat) : 'không có hoá đơn VAT';
+    tdSum.appendChild(vn);
 
     const tdDel = el('td', 'r');
     const b = el('button', 'btn mini ghost', '×');
@@ -280,26 +325,31 @@
     b.addEventListener('click', onDel);
     tdDel.appendChild(b);
 
-    [tdName, tdQty, tdPrice, tdSum, tdDel].forEach(td => tr.appendChild(td));
+    [tdName, tdQty, tdPrice, tdVat, tdSum, tdDel].forEach(td => tr.appendChild(td));
     return tr;
   }
 
   function tableFor(rows, basePath, title, onChange) {
+    const gomVat = gomVatCua(basePath);
     const box = el('div', 'rv-f');
     const tbl = el('table', 'tbl');
     if (title) tbl.appendChild(el('caption', null, title));
     tbl.appendChild(el('thead', null,
-      '<tr><th>Mục</th><th class="r">Số lượng</th><th class="r">Đơn giá (đồng)</th><th class="r">Thành tiền</th><th></th></tr>'));
+      '<tr><th>Mục</th><th class="r">Số lượng</th><th class="r">Đơn giá (đồng)</th>'
+      + '<th class="r">VAT</th><th class="r">Thành tiền</th><th></th></tr>'));
     const tb = el('tbody');
     rows.forEach((r, i) => tb.appendChild(rowEl(r, basePath + '.' + i, () => { rows.splice(i, 1); onChange(true); })));
-    const sum = el('tr', 't-sum', `<td>Cộng</td><td></td><td></td><td class="r"><span class="cell-money">${money(sumRows(rows))}</span></td><td></td>`);
-    tb.appendChild(sum);
+
+    const c = congBang(rows, gomVat);
+    tb.appendChild(el('tr', 'c-hang', `<td>Cộng tiền hàng (chưa VAT)</td><td></td><td></td><td></td><td class="r"><span class="num">${money(c.hang)}</span></td><td></td>`));
+    tb.appendChild(el('tr', 'c-vat', `<td>Cộng VAT</td><td></td><td></td><td></td><td class="r"><span class="num">${money(c.vat)}</span></td><td></td>`));
+    tb.appendChild(el('tr', 't-sum', `<td>Tổng phải trả</td><td></td><td></td><td></td><td class="r"><span class="cell-money">${money(c.tong)}</span></td><td></td>`));
     tbl.appendChild(tb);
     box.appendChild(tbl);
 
     const add = el('button', 'btn mini', '+ thêm dòng');
     add.style.marginTop = '12px';
-    add.addEventListener('click', () => { rows.push(['Mục mới', 1, 'cái', 0, '']); onChange(true); });
+    add.addEventListener('click', () => { rows.push(['Mục mới', 1, 'cái', 0, '', 8]); onChange(true); });
     box.appendChild(add);
     return box;
   }
@@ -360,7 +410,7 @@
     const f = document.getElementById('fThue');
     f.innerHTML = '';
     f.appendChild(fieldsFor(th, 'thue', laDN
-      ? ['dnVatRa', 'dnVatVao', 'dnCoHoaDon', 'dnTndn', 'giaDaGomVat']
+      ? ['dnVatRa', 'dnVatVao', 'nlCoHoaDon', 'dnTndn', 'giaDaGomVat']
       : ['nguongMien', 'truNguong', 'hoHangHoa', 'hoAnUong', 'hoDichVu']));
 
     plRows(document.getElementById('plThue'), laDN ? [
@@ -446,7 +496,7 @@
 
     // --- cơ cấu một tháng ---
     // tìm theo TÊN mục (người xem có thể xoá/thêm dòng nên không dựa vào số thứ tự)
-    const opexCo = (re) => S.opex.reduce((a, r) => a + (re.test(r[0]) ? (+r[1] || 0) * (+r[3] || 0) : 0), 0);
+    const opexCo = (re) => S.opex.reduce((a, r) => a + (re.test(r[0]) ? tienHang(r, gomVatOpex()).tong : 0), 0);
     const nhanSu = opexCo(/l[uư]ơng|bhxh|ph[uụ] c[aấ]p/i);
     const thue = opexCo(/thu[eê] m[aặ]t b[aằ]ng|thu[eê] nh[aà]/i);
     const dt = R.doanhThu || 1;
@@ -467,8 +517,23 @@
       if (ITHIEN) row.classList.add('in'); else io.observe(row);
     });
 
-    // --- tổng vốn ---
+    // --- tổng vốn + VAT đã trả khi mua sắm ---
     document.getElementById('capexTotal').textContent = money(R.vonPhaiCo);
+    const vb = document.getElementById('vatCapexBox');
+    vb.innerHTML = '';
+    const fv = el('div', 'flag in');
+    if (R.vatCapex <= 0) {
+      fv.textContent = 'Không khoản mua sắm nào có hoá đơn VAT — kiểm lại cột VAT nếu mua có hoá đơn.';
+    } else if (R.laDN) {
+      fv.appendChild(el('span', null, `VAT đã trả khi mua sắm: ${big(R.vatCapex)} — doanh nghiệp được khấu trừ dần`
+        + (R.thangHetVatDauTu ? `, bù hết VAT phải nộp tới hết tháng ${R.thangHetVatDauTu}.` : '.')));
+    } else {
+      fv.classList.add('warn');
+      fv.appendChild(el('span', 'tri'));
+      fv.appendChild(el('span', null, `VAT đã trả khi mua sắm: ${big(R.vatCapex)} — hộ kinh doanh `
+        + 'không khấu trừ được, khoản này mất luôn vào vốn.'));
+    }
+    vb.appendChild(fv);
 
     // --- giá vốn 1 kg ---
     plRows(document.getElementById('plKg'), [
@@ -513,13 +578,16 @@
     plRows(document.getElementById('plMonth'), [
       ['Doanh thu', money(R.doanhThu)],
       ['Giá vốn hàng bán', '− ' + money(R.bienPhi), 'sub'],
-      ['Lãi gộp (' + pct(R.tyLeGop * 100) + ')', money(R.laiGop)],
+      ['Lãi gộp (' + pct(R.doanhThu ? R.laiGop / R.doanhThu * 100 : 0) + ')', money(R.laiGop)],
       ['Chi phí cố định', '− ' + money(R.coDinh), 'sub'],
       ['Thuế (' + (R.laDN ? 'VAT + TNDN' : 'hộ kinh doanh') + ')', '− ' + money(R.tongThue), 'sub'],
       '-',
       ['Tiền thật còn lại mỗi tháng', (R.laiTienMat < 0 ? '− ' : '') + money(Math.abs(R.laiTienMat)) + ' đ', 'big'],
       ['Khấu hao thiết bị (' + S.giaThiet.khauHaoNam + ' năm)', '− ' + money(R.khauHao), 'sub'],
-      ['Lãi kế toán', (R.laiKeToan < 0 ? '− ' : '') + money(Math.abs(R.laiKeToan)) + ' đ']
+      ['Lãi kế toán', (R.laiKeToan < 0 ? '− ' : '') + money(Math.abs(R.laiKeToan)) + ' đ'],
+      R.laDN && R.thangHetVatDauTu
+        ? ['VAT mua sắm còn khấu trừ', 'hết tháng ' + R.thangHetVatDauTu, 'sub']
+        : ['VAT trả khi mua sắm', big(R.vatCapex) + (R.laDN ? '' : ' — không khấu trừ'), 'sub']
     ]);
 
     // --- biểu đồ + bảng dòng tiền ---
@@ -718,15 +786,25 @@
     const tr = i.closest('tr');
     if (tr) {
       tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
+      const gomVat = gomVatCua(path);
       const cell = tr.querySelector('.cell-money');
-      if (cell) {
-        const r = pathRow(path);
-        if (r) cell.textContent = money((+r[1] || 0) * (+r[3] || 0));
+      const r = pathRow(path);
+      if (cell && r) {
+        const x = tienHang(r, gomVat);
+        cell.textContent = money(x.tong);
+        const vn = cell.parentElement.querySelector('.t-note');
+        if (vn) vn.textContent = x.vat ? (gomVat ? 'trong đó VAT ' : '+ VAT ') + money(x.vat) : 'không có hoá đơn VAT';
         cell.classList.remove('bump'); void cell.offsetWidth; cell.classList.add('bump');
       }
       const body = tr.closest('tbody');
-      const sumCell = body && body.querySelector('.t-sum .cell-money');
-      if (sumCell) sumCell.textContent = money(sumRows(pathRows(path)));
+      if (body) {
+        const c = congBang(pathRows(path), gomVat);
+        const o1 = body.querySelector('.c-hang .num'), o2 = body.querySelector('.c-vat .num'),
+              o3 = body.querySelector('.t-sum .cell-money');
+        if (o1) o1.textContent = money(c.hang);
+        if (o2) o2.textContent = money(c.vat);
+        if (o3) o3.textContent = money(c.tong);
+      }
     }
 
     clearTimeout(tdebounce);
@@ -759,11 +837,15 @@
 
     const ce = document.getElementById('capexExtra');
     ce.innerHTML = '';
+    ce.appendChild(fieldsFor(S.thue, 'thue', ['muaCapexGomVat']));
     ce.appendChild(fieldsFor(S.giaThiet, 'giaThiet', ['duPhong', 'quyThang']));
 
     const ob = document.getElementById('opexBox');
     ob.innerHTML = '';
     ob.appendChild(tableFor(S.opex, 'opex', null, veNhapLieu));
+    const oe = document.getElementById('opexExtra');
+    oe.innerHTML = '';
+    oe.appendChild(fieldsFor(S.thue, 'thue', ['muaOpexGomVat']));
 
     const f1 = document.getElementById('fGiaVon');
     f1.innerHTML = ''; f1.appendChild(fieldsFor(S.giaVon, 'giaVon', Object.keys(DATA.giaVon)));

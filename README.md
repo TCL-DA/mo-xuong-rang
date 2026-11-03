@@ -25,6 +25,11 @@ không thu thập gì; số sửa xong nằm trên máy người xem.
 (máy rang 6 kg, hệ tự động, máy tách đá) lấy theo mức người dùng đưa vào; phần còn lại là mức
 thường gặp. Giá thật phải lấy từ nhà cung cấp.
 
+Mỗi dòng trong bảng vốn đầu tư và bảng chi phí tháng có **cột VAT riêng** (8% cho hàng hoá đang được giảm,
+10% viễn thông, 5% nước sạch, 0 cho khoản không có hoá đơn như thuê nhà của cá nhân, lương, lệ phí,
+cà phê xanh mua của nông dân). Công tắc dưới mỗi bảng cho biết đơn giá đang nhập là giá **chưa** hay **đã**
+gồm VAT. Doanh nghiệp được khấu trừ dần phần VAT mua sắm; hộ kinh doanh thì không — trang nói rõ mất bao nhiêu.
+
 Mục 06 tính thuế theo hai hình thức: **hộ kinh doanh** (phần trăm doanh thu, ngưỡng miễn 1 tỷ đồng/năm theo
 Nghị định 141/2026/NĐ-CP sửa Nghị định 68/2026/NĐ-CP) hoặc **doanh nghiệp** (VAT đầu ra 8% theo Nghị quyết
 204/2025/QH15 trừ VAT đầu vào, cộng thuế TNDN 20%). Tra ngày 03/11/2026 — chính sách thuế đổi liên tục,

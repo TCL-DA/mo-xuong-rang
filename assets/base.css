@@ -117,11 +117,18 @@ section:first-of-type { border-top: 0; }
 
 /* ---------- bảng chi phí ---------- */
 .tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.tbl th:nth-child(1), .tbl td:nth-child(1) { width: 44%; }
-.tbl th:nth-child(2), .tbl td:nth-child(2) { width: 15%; }
-.tbl th:nth-child(3), .tbl td:nth-child(3) { width: 20%; }
-.tbl th:nth-child(4), .tbl td:nth-child(4) { width: 17%; }
-.tbl th:nth-child(5), .tbl td:nth-child(5) { width: 4%; }
+.tbl th:nth-child(1), .tbl td:nth-child(1) { width: 36%; }
+.tbl th:nth-child(2), .tbl td:nth-child(2) { width: 13%; }
+.tbl th:nth-child(3), .tbl td:nth-child(3) { width: 18%; }
+.tbl th:nth-child(4), .tbl td:nth-child(4) { width: 10%; }
+.tbl th:nth-child(5), .tbl td:nth-child(5) { width: 19%; }
+.tbl th:nth-child(6), .tbl td:nth-child(6) { width: 4%; }
+/* bảng tổng cuối mục 02 chỉ có 2 ô */
+.tbl-2 td:nth-child(1) { width: 60%; }
+.tbl-2 td:nth-child(2) { width: 40%; }
+.tbl tr.c-hang td, .tbl tr.c-vat td { border-bottom: 0; padding-top: 10px; padding-bottom: 2px; color: var(--muted); font-weight: 600; }
+.tbl tr.c-vat td { padding-top: 2px; padding-bottom: 10px; }
+.tbl tr.c-hang .num, .tbl tr.c-vat .num { font-size: 16px; }
 .tbl caption { text-align: left; font-size: 19px; font-weight: 700; padding-bottom: 10px; }
 .tbl th {
   text-align: left; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em;
@@ -155,6 +162,7 @@ input.inp:focus { outline: 3px solid var(--ink); outline-offset: 0; background: 
 .inp.name:hover { background: #eef0ef; }
 .inp.name:focus { outline: 2px solid var(--ink); outline-offset: 2px; background: #fff; }
 input.inp.w-qty { max-width: 96px; }
+input.inp.w-vat { max-width: 72px; }
 input.inp.w-price { max-width: 170px; }
 .cell-money { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .unit { font-size: 14px; font-weight: 600; color: var(--muted); white-space: nowrap; }
@@ -273,14 +281,16 @@ footer.dark { padding-top: var(--gap-3); padding-bottom: var(--gap-3); }
   .tbl tr { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
   .tbl td { display: block; }
   .tbl td:nth-child(1) { grid-column: 1 / -1; width: auto; padding-right: 44px; }
-  .tbl td:nth-child(2), .tbl td:nth-child(3) { width: auto; }
-  .tbl td:nth-child(4) {
+  .tbl td:nth-child(2), .tbl td:nth-child(3), .tbl td:nth-child(4) { width: auto; }
+  .tbl td:nth-child(4) { grid-column: 1; }
+  .tbl td:nth-child(5) {
     grid-column: 1 / -1; width: auto;
-    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap;
     border-top: 1px solid var(--rule); margin-top: 6px; padding-top: 6px;
   }
-  .tbl td:nth-child(4)::before { margin-bottom: 0; }
-  .tbl td:nth-child(5) { position: absolute; top: 10px; right: 0; width: auto; padding: 0; }
+  .tbl td:nth-child(5)::before { margin-bottom: 0; }
+  .tbl td:nth-child(5) .t-note { width: 100%; }
+  .tbl td:nth-child(6) { position: absolute; top: 10px; right: 0; width: auto; padding: 0; }
   .tbl tr.t-sum { display: flex; justify-content: space-between; }
   .tbl tr.t-sum td { width: auto; }
   .tbl tr.t-sum td:empty { display: none; }

@@ -50,10 +50,19 @@ input.inp.name, .inp.name { font-weight: 600; text-align: left; width: 100% !imp
 
 /* bảng */
 .tbl, .pl { break-inside: auto; width: 100%; }
-.tbl th:nth-child(1), .tbl td:nth-child(1) { width: 46%; }
-.tbl th:nth-child(2), .tbl td:nth-child(2) { width: 12%; white-space: nowrap; }
-.tbl th:nth-child(3), .tbl td:nth-child(3) { width: 21%; padding-right: 5mm; }
-.tbl th:nth-child(4), .tbl td:nth-child(4) { width: 21%; }
+/* Khi in thì BỎ cột VAT %: thuế suất đã nằm trong dòng "+ VAT …" dưới số tiền.
+   Giữ cột này lại chỉ tổ chồng chữ vì khổ A4 hẹp hơn màn hình. */
+.tbl th:nth-child(4), .tbl td:nth-child(4) { display: none !important; }
+.tbl th:nth-child(1), .tbl td:nth-child(1) { width: 44%; }
+.tbl th:nth-child(2), .tbl td:nth-child(2) { width: 12%; white-space: nowrap; padding-right: 3mm; }
+.tbl th:nth-child(3), .tbl td:nth-child(3) { width: 21%; white-space: nowrap; padding-right: 5mm; }
+.tbl th:nth-child(5), .tbl td:nth-child(5) { width: 23%; white-space: nowrap; }
+.tbl-2 td:nth-child(2) { display: table-cell !important; }
+/* ghi chú "+ VAT ..." phải nằm hẳn một dòng riêng, không đè lên số */
+.tbl td .t-note { display: block; clear: both; line-height: 1.3; margin-top: 0.6mm; }
+.tbl td:nth-child(5) .cell-money { display: block; }
+.tbl-2 td:nth-child(1) { width: 60%; }
+.tbl-2 td:nth-child(2) { width: 40%; }
 .tbl td .unit { font-size: 9pt; }
 .tbl th { border-bottom: 0.6pt solid #000; font-size: 8.5pt; }
 .tbl td, .pl td { border-bottom: 0.4pt solid #666; padding: 1.4mm 2mm; }

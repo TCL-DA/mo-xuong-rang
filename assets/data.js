@@ -14,75 +14,80 @@ const DATA = {
     capNhat: '03/11/2026'
   },
 
+  /* Mỗi hàng: [tên, số lượng, đơn vị, đơn giá, ghi chú, VAT %]
+     VAT 8% = mức đang giảm tới hết 31/12/2026. Để 0 cho khoản không có hoá đơn GTGT
+     (thuê nhà của cá nhân, lương, lệ phí nhà nước, cà phê xanh mua của nông dân).
+     Viễn thông KHÔNG thuộc diện giảm nên để 10%. Nước sạch 5%. */
+
   /* ---------- 1. VỐN ĐẦU TƯ (một lần) ---------- */
   capex: [
     {
       nhom: 'Thiết bị rang',
       ma: 'A',
       rows: [
-        ['Máy rang 6 kg (gồm bộ làm nguội)', 1, 'bộ', 235000000, 'Giá đang dùng để tính'],
-        ['Hệ tự động (nạp liệu, điều khiển mẻ)', 1, 'bộ', 55000000, 'Giá đang dùng để tính'],
-        ['Máy tách đá (destoner)', 1, 'bộ', 35000000, 'Giá đang dùng để tính'],
-        ['Ống khói inox + cút + giá đỡ (~8 m)', 1, 'hệ', 12000000, 'Phải có, nhà thuê hay bị bỏ quên'],
-        ['Tủ điện + cấp nguồn 3 pha, dây, CB, công lắp', 1, 'hệ', 18000000, 'Máy 6 kg + hệ tự động nên đi 3 pha'],
-        ['Bình gas LPG 45 kg + van, đồng hồ, ống mềm', 2, 'bình', 3000000, 'Đổi vỏ 1 lần, sau chỉ mua gas'],
-        ['Cân điện tử 30 kg + cân sàn 150 kg', 1, 'bộ', 3500000, ''],
-        ['Dụng cụ rang (xẻng, sàng, xô, hút bụi vỏ lụa)', 1, 'bộ', 4500000, ''],
-        ['Máy xay công nghiệp (xay theo đơn)', 1, 'cái', 18000000, ''],
-        ['Máy hàn miệng túi + bàn đóng gói', 1, 'bộ', 8000000, ''],
-        ['Thùng ủ kín 20 kg (degas, trữ hàng)', 6, 'thùng', 900000, 'Rang xong phải ủ 3–7 ngày']
+        ['Máy rang 6 kg (gồm bộ làm nguội)', 1, 'bộ', 235000000, 'Giá đang dùng để tính', 8],
+        ['Hệ tự động (nạp liệu, điều khiển mẻ)', 1, 'bộ', 55000000, 'Giá đang dùng để tính', 8],
+        ['Máy tách đá (destoner)', 1, 'bộ', 35000000, 'Giá đang dùng để tính', 8],
+        ['Ống khói inox + cút + giá đỡ (~8 m)', 1, 'hệ', 12000000, 'Phải có, nhà thuê hay bị bỏ quên', 8],
+        ['Tủ điện + cấp nguồn 3 pha, dây, CB, công lắp', 1, 'hệ', 18000000, 'Máy 6 kg + hệ tự động nên đi 3 pha', 8],
+        ['Bình gas LPG 45 kg + van, đồng hồ, ống mềm', 2, 'bình', 3000000, 'Đổi vỏ 1 lần, sau chỉ mua gas', 8],
+        ['Cân điện tử 30 kg + cân sàn 150 kg', 1, 'bộ', 3500000, '', 8],
+        ['Dụng cụ rang (xẻng, sàng, xô, hút bụi vỏ lụa)', 1, 'bộ', 4500000, '', 8],
+        ['Máy xay công nghiệp (xay theo đơn)', 1, 'cái', 18000000, '', 8],
+        ['Máy hàn miệng túi + bàn đóng gói', 1, 'bộ', 8000000, '', 8],
+        ['Thùng ủ kín 20 kg (degas, trữ hàng)', 6, 'thùng', 900000, 'Rang xong phải ủ 3–7 ngày', 8]
       ]
     },
     {
       nhom: 'Quán cóc take away (5 chỗ ngồi)',
       ma: 'B',
       rows: [
-        ['Máy pha espresso 2 group', 1, 'cái', 70000000, 'Mua mới hãng phổ thông; máy cũ ~35–45 tr'],
-        ['Máy xay espresso (xay theo ly)', 1, 'cái', 15000000, ''],
-        ['Quầy bar inox + mặt đá + chậu rửa 2 hố', 1, 'bộ', 25000000, ''],
-        ['Tủ mát 2 cánh + tủ đông nhỏ', 1, 'bộ', 16000000, ''],
-        ['Máy làm đá viên 50 kg/ngày', 1, 'cái', 12000000, 'Mua đá ngoài thì để 0'],
-        ['Lọc nước RO cho máy pha', 1, 'bộ', 8000000, 'Bỏ qua là hỏng máy pha'],
-        ['Dụng cụ bar + ly + bình ủ + đồ pha thủ công', 1, 'bộ', 8000000, ''],
-        ['Bàn ghế 5 chỗ ngồi + 2 bàn cao đứng', 1, 'bộ', 7000000, ''],
-        ['POS + máy in bill + ngăn kéo tiền (phần mềm năm đầu)', 1, 'bộ', 7000000, ''],
-        ['Biển hiệu + bảng menu + đèn + decal', 1, 'hệ', 18000000, ''],
-        ['Sửa mặt bằng: sơn, sàn, trần, điện nước, thoát nước, hút mùi', 1, 'gói', 45000000, 'Khoản dễ vỡ dự toán nhất'],
-        ['Quạt công nghiệp / thông gió khu bar', 2, 'cái', 2000000, ''],
-        ['Wifi + loa + camera', 1, 'hệ', 6000000, ''],
-        ['Bình chữa cháy + nội quy, biển PCCC', 1, 'bộ', 2500000, 'Rang gas, cơ quan kiểm tra sẽ hỏi']
+        ['Máy pha espresso 2 group', 1, 'cái', 70000000, 'Mua mới hãng phổ thông; máy cũ ~35–45 tr', 8],
+        ['Máy xay espresso (xay theo ly)', 1, 'cái', 15000000, '', 8],
+        ['Quầy bar inox + mặt đá + chậu rửa 2 hố', 1, 'bộ', 25000000, '', 8],
+        ['Tủ mát 2 cánh + tủ đông nhỏ', 1, 'bộ', 16000000, '', 8],
+        ['Máy làm đá viên 50 kg/ngày', 1, 'cái', 12000000, 'Mua đá ngoài thì để 0', 8],
+        ['Lọc nước RO cho máy pha', 1, 'bộ', 8000000, 'Bỏ qua là hỏng máy pha', 8],
+        ['Dụng cụ bar + ly + bình ủ + đồ pha thủ công', 1, 'bộ', 8000000, '', 8],
+        ['Bàn ghế 5 chỗ ngồi + 2 bàn cao đứng', 1, 'bộ', 7000000, '', 8],
+        ['POS + máy in bill + ngăn kéo tiền (phần mềm năm đầu)', 1, 'bộ', 7000000, '', 8],
+        ['Biển hiệu + bảng menu + đèn + decal', 1, 'hệ', 18000000, '', 8],
+        ['Sửa mặt bằng: sơn, sàn, trần, điện nước, thoát nước, hút mùi', 1, 'gói', 45000000, 'Khoản dễ vỡ dự toán nhất', 8],
+        ['Quạt công nghiệp / thông gió khu bar', 2, 'cái', 2000000, '', 8],
+        ['Wifi + loa + camera', 1, 'hệ', 6000000, '', 8],
+        ['Bình chữa cháy + nội quy, biển PCCC', 1, 'bộ', 2500000, 'Rang gas, cơ quan kiểm tra sẽ hỏi', 8]
       ]
     },
     {
       nhom: 'Thủ tục & hàng hoá lô đầu',
       ma: 'C',
       rows: [
-        ['Cọc thuê mặt bằng', 2, 'tháng', 10000000, 'Chủ nhà thường lấy 2–3 tháng'],
-        ['Tiền thuê trả trước tháng đầu', 1, 'tháng', 10000000, ''],
-        ['Giấy phép: ĐKKD, an toàn thực phẩm, PCCC, biển hiệu', 1, 'gói', 8000000, ''],
-        ['Cà phê xanh lô đầu', 300, 'kg', 95000, 'Trộn robusta + arabica'],
-        ['Bao bì + tem nhãn + thùng carton lô đầu', 1, 'gói', 12000000, ''],
-        ['Nguyên liệu quán lô đầu (sữa, đường, syrup, trà, ly, ống hút)', 1, 'gói', 10000000, ''],
-        ['Khai trương + marketing ban đầu (ảnh, poster, voucher, ads)', 1, 'gói', 15000000, ''],
-        ['Học rang + học pha chế', 1, 'gói', 10000000, 'Đã biết nghề thì để 0']
+        ['Cọc thuê mặt bằng', 2, 'tháng', 10000000, 'Chủ nhà thường lấy 2–3 tháng', 0],
+        ['Tiền thuê trả trước tháng đầu', 1, 'tháng', 10000000, '', 0],
+        ['Giấy phép: ĐKKD, an toàn thực phẩm, PCCC, biển hiệu', 1, 'gói', 8000000, '', 0],
+        ['Cà phê xanh lô đầu', 300, 'kg', 95000, 'Trộn robusta + arabica', 0],
+        ['Bao bì + tem nhãn + thùng carton lô đầu', 1, 'gói', 12000000, '', 8],
+        ['Nguyên liệu quán lô đầu (sữa, đường, syrup, trà, ly, ống hút)', 1, 'gói', 10000000, '', 8],
+        ['Khai trương + marketing ban đầu (ảnh, poster, voucher, ads)', 1, 'gói', 15000000, '', 8],
+        ['Học rang + học pha chế', 1, 'gói', 10000000, 'Đã biết nghề thì để 0', 8]
       ]
     }
   ],
 
   /* ---------- 2. CHI PHÍ CỐ ĐỊNH HÀNG THÁNG ---------- */
   opex: [
-    ['Thuê mặt bằng 60 m²', 1, 'tháng', 10000000, 'Giá đang dùng để tính'],
-    ['Lương bán hàng toàn thời gian', 1, 'người', 7500000, ''],
-    ['Lương bán hàng bán thời gian (4 h/ngày)', 1, 'người', 4500000, ''],
-    ['BHXH + phụ cấp + cơm trưa', 1, 'gói', 2000000, ''],
-    ['Điện quán (tủ mát, máy pha, đèn, quạt)', 1, 'tháng', 3500000, 'Điện rang tính riêng theo kg'],
-    ['Nước', 1, 'tháng', 600000, ''],
-    ['Internet + POS + điện thoại', 1, 'tháng', 700000, ''],
-    ['Rác + vệ sinh', 1, 'tháng', 300000, ''],
-    ['Marketing thường xuyên (ads, quà, mẫu thử)', 1, 'tháng', 3000000, ''],
-    ['Bảo trì máy + vật tư thay thế', 1, 'tháng', 1500000, 'Gasket, lưới, dầu mỡ, hiệu chuẩn'],
-    ['Kế toán + thuế khoán', 1, 'tháng', 1500000, ''],
-    ['Lương chủ tự trả cho mình', 1, 'tháng', 0, 'Để 0 nếu chủ tự đứng quán']
+    ['Thuê mặt bằng 60 m²', 1, 'tháng', 10000000, 'Giá đang dùng để tính', 0],
+    ['Lương bán hàng toàn thời gian', 1, 'người', 7500000, '', 0],
+    ['Lương bán hàng bán thời gian (4 h/ngày)', 1, 'người', 4500000, '', 0],
+    ['BHXH + phụ cấp + cơm trưa', 1, 'gói', 2000000, '', 0],
+    ['Điện quán (tủ mát, máy pha, đèn, quạt)', 1, 'tháng', 3500000, 'Điện rang tính riêng theo kg', 8],
+    ['Nước', 1, 'tháng', 600000, '', 5],
+    ['Internet + POS + điện thoại', 1, 'tháng', 700000, '', 10],
+    ['Rác + vệ sinh', 1, 'tháng', 300000, '', 0],
+    ['Marketing thường xuyên (ads, quà, mẫu thử)', 1, 'tháng', 3000000, '', 8],
+    ['Bảo trì máy + vật tư thay thế', 1, 'tháng', 1500000, 'Gasket, lưới, dầu mỡ, hiệu chuẩn', 8],
+    ['Kế toán + thuế khoán', 1, 'tháng', 1500000, '', 8],
+    ['Lương chủ tự trả cho mình', 1, 'tháng', 0, 'Để 0 nếu chủ tự đứng quán', 0]
   ],
 
   /* ---------- 3. GIÁ VỐN 1 KG CÀ PHÊ RANG ---------- */
@@ -140,9 +145,11 @@ const DATA = {
     hoDichVu: 7,               // % doanh thu — rang gia công
     dnVatRa: 8,                // % VAT đầu ra
     dnVatVao: 8,               // % VAT đầu vào bình quân
-    dnCoHoaDon: 60,            // % chi phí đầu vào CÓ hoá đơn GTGT (cà phê xanh mua dân thường không có)
     dnTndn: 20,                // % thuế thu nhập doanh nghiệp
-    giaDaGomVat: 1             // 1 = giá bán đang nhập là giá khách trả (đã gồm VAT)
+    giaDaGomVat: 1,            // 1 = GIÁ BÁN đang nhập là giá khách trả (đã gồm VAT)
+    muaCapexGomVat: 0,         // 0 = đơn giá ở bảng VỐN là giá chưa VAT (báo giá thiết bị thường vậy)
+    muaOpexGomVat: 1,          // 1 = chi phí hàng tháng đang nhập là số tiền thực trả (đã gồm VAT)
+    nlCoHoaDon: 40             // % nguyên liệu/bao bì trong giá vốn CÓ hoá đơn GTGT
   },
 
   /* ---------- 7. GIẢ THIẾT TÍNH TOÁN ---------- */
@@ -191,9 +198,11 @@ const NHAN = {
   hoDichVu: ['Rang gia công', '% doanh thu'],
   dnVatRa: ['VAT đầu ra', '%'],
   dnVatVao: ['VAT đầu vào bình quân', '%'],
-  dnCoHoaDon: ['Chi phí có hoá đơn GTGT', '%'],
   dnTndn: ['Thuế TNDN', '% trên lãi'],
   giaDaGomVat: ['Giá bán đã gồm VAT', '1 = rồi, 0 = chưa'],
+  muaCapexGomVat: ['Đơn giá bảng vốn đã gồm VAT', '1 = rồi, 0 = chưa'],
+  muaOpexGomVat: ['Chi phí tháng đã gồm VAT', '1 = rồi, 0 = chưa'],
+  nlCoHoaDon: ['Nguyên liệu có hoá đơn GTGT', '%'],
 
   duPhong: ['Dự phòng vốn đầu tư', '%'],
   quyThang: ['Quỹ sống sót', 'tháng'],
