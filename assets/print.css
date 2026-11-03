@@ -58,6 +58,13 @@ input.inp.name, .inp.name { font-weight: 600; text-align: left; width: 100% !imp
 .tbl th:nth-child(3), .tbl td:nth-child(3) { width: 21%; white-space: nowrap; padding-right: 5mm; }
 .tbl th:nth-child(5), .tbl td:nth-child(5) { width: 23%; white-space: nowrap; }
 .tbl-2 td:nth-child(2) { display: table-cell !important; }
+/* thang sản lượng: in đủ 5 cột số, bỏ cột nút */
+.tbl-thang th:nth-child(4), .tbl-thang td:nth-child(4) { display: table-cell !important; }
+.tbl-thang th:nth-child(1), .tbl-thang td:nth-child(1) { width: 20%; }
+.tbl-thang th:nth-child(2), .tbl-thang td:nth-child(2) { width: 22%; }
+.tbl-thang th:nth-child(3), .tbl-thang td:nth-child(3) { width: 18%; }
+.tbl-thang th:nth-child(5), .tbl-thang td:nth-child(5) { width: 22%; }
+.tbl-thang tr.dang-dung td { font-weight: 700; }
 /* ghi chú "+ VAT ..." phải nằm hẳn một dòng riêng, không đè lên số */
 .tbl td .t-note { display: block; clear: both; line-height: 1.3; margin-top: 0.6mm; }
 .tbl td:nth-child(5) .cell-money { display: block; }

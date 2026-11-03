@@ -123,6 +123,17 @@ section:first-of-type { border-top: 0; }
 .tbl th:nth-child(4), .tbl td:nth-child(4) { width: 10%; }
 .tbl th:nth-child(5), .tbl td:nth-child(5) { width: 19%; }
 .tbl th:nth-child(6), .tbl td:nth-child(6) { width: 4%; }
+/* thang sản lượng: 6 cột đều hơn, cột đầu hẹp */
+.tbl-thang th:nth-child(1), .tbl-thang td:nth-child(1) { width: 20%; }
+.tbl-thang th:nth-child(2), .tbl-thang td:nth-child(2) { width: 18%; }
+.tbl-thang th:nth-child(3), .tbl-thang td:nth-child(3) { width: 15%; }
+.tbl-thang th:nth-child(4), .tbl-thang td:nth-child(4) { width: 15%; }
+.tbl-thang th:nth-child(5), .tbl-thang td:nth-child(5) { width: 17%; }
+.tbl-thang th:nth-child(6), .tbl-thang td:nth-child(6) { width: 15%; }
+.tbl-thang td { padding-top: 12px; padding-bottom: 12px; }
+.tbl-thang tr.dang-dung td { background: #eceeed; }
+.tbl-thang .num { font-size: 17px; }
+
 /* bảng tổng cuối mục 02 chỉ có 2 ô */
 .tbl-2 td:nth-child(1) { width: 60%; }
 .tbl-2 td:nth-child(2) { width: 40%; }

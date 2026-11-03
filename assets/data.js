@@ -170,7 +170,8 @@ const DATA = {
     khauHaoNam: 5,           // năm khấu hao thiết bị
     thangChay1: 40,          // % công suất doanh thu tháng 1–3
     thangChay2: 70,          // % công suất tháng 4–6
-    thangChay3: 100          // % công suất từ tháng 7
+    thangChay3: 100,         // % công suất từ tháng 7
+    hoanVonMuon: 5           // số năm muốn hoàn vốn, để tính ngược ra sản lượng cần bán
   }
 };
 
@@ -229,5 +230,6 @@ const NHAN = {
   khauHaoNam: ['Khấu hao thiết bị', 'năm'],
   thangChay1: ['Công suất tháng 1–3', '%'],
   thangChay2: ['Công suất tháng 4–6', '%'],
-  thangChay3: ['Công suất từ tháng 7', '%']
+  thangChay3: ['Công suất từ tháng 7', '%'],
+  hoanVonMuon: ['Muốn hoàn vốn trong', 'năm']
 };

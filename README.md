@@ -37,6 +37,10 @@ Nghị định 141/2026/NĐ-CP sửa Nghị định 68/2026/NĐ-CP) hoặc **doa
 204/2025/QH15 trừ VAT đầu vào, cộng thuế TNDN 20%). Tra ngày 03/11/2026 — chính sách thuế đổi liên tục,
 phải đối chiếu văn bản gốc trước khi dùng để quyết định.
 
+Cuối mục 07 có **thang sản lượng**: giữ nguyên quán và mọi chi phí, chỉ đổi lượng cà phê bán sỉ mỗi tháng
+để thấy lãi và thời gian hoàn vốn đổi theo; mỗi mốc có nút nạp thẳng vào mục 05. Kèm ô *"muốn hoàn vốn
+trong N năm"* — trang dò ngược ra phải bán bao nhiêu kg, quy ra bao nhiêu kg mỗi ngày và mấy giờ đứng máy.
+
 Mục *"Ghi chú & cảnh báo"* cuối trang liệt kê những khoản hay làm vỡ dự toán (sửa mặt bằng, ống khói
 và PCCC, điện ba pha, hao hụt rang, đọng vốn cà phê xanh) và những gì bảng **chưa** tính
 (lãi vay, tăng giá thuê, đại tu máy, thuế khi lên công ty).

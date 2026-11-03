@@ -277,6 +277,109 @@
     };
   }
 
+  /* Tính thử với một mức bán sỉ khác, không đụng tới bộ số đang nhập. */
+  function tinhVoiSiKg(kg) {
+    const cu = S.doanhThu.siKg;
+    S.doanhThu.siKg = kg;
+    let r;
+    try { r = tinh(); } finally { S.doanhThu.siKg = cu; }
+    return r;
+  }
+
+  /* Dò mức bán sỉ nhỏ nhất đủ hoàn vốn trong số năm mong muốn.
+     Lãi tăng đều theo sản lượng nên chặt nhị phân là đủ. */
+  function siKgCanDe(thangMuon) {
+    // beMonth = null nghĩa là KHÔNG hoàn vốn; null <= 60 lại ra true trong JS
+    // nên phải kiểm tra có giá trị trước, không thì báo "cần bán 0 kg"
+    const r0 = tinhVoiSiKg(0);
+    if (r0.beMonth && r0.beMonth <= thangMuon) return 0;
+    let lo = 0, hi = 50;
+    while (hi < 20000) {
+      const r = tinhVoiSiKg(hi);
+      if (r.beMonth && r.beMonth <= thangMuon) break;
+      lo = hi; hi *= 2;
+    }
+    if (hi >= 20000) return null;
+    for (let i = 0; i < 24; i++) {
+      const giua = (lo + hi) / 2;
+      const r = tinhVoiSiKg(giua);
+      if (r.beMonth && r.beMonth <= thangMuon) hi = giua; else lo = giua;
+    }
+    return hi;
+  }
+
+  function veThangSanLuong() {
+    const goc = +S.doanhThu.siKg || 0;
+    const mocs = [...new Set([goc, 150, 250, 350, 450, 600].map(v => Math.round(v)))].sort((a, b) => a - b);
+
+    const tbl = document.getElementById('tblThang');
+    tbl.innerHTML = '<thead><tr><th>Bán sỉ mỗi tháng</th><th class="r">Tổng cà phê rang bán ra</th>'
+      + '<th class="r">Doanh thu</th><th class="r">Lãi tiền mặt</th><th class="r">Hoàn vốn</th><th></th></tr></thead>';
+    const tb = el('tbody');
+
+    mocs.forEach(kg => {
+      const r = tinhVoiSiKg(kg);
+      const tr = el('tr', 'rail');
+      if (kg === goc) tr.classList.add('dang-dung');
+      const tong = r.siKg + r.leKg;
+      const hv = r.beMonth ? thangNam(r.beMonth) : (r.laiTienMat > 0 ? 'trên 10 năm' : 'lỗ đều');
+
+      const t1 = el('td'); t1.dataset.lbl = 'Bán sỉ';
+      t1.innerHTML = `<span class="t-name">${nf.format(kg)} kg</span>`
+        + (kg === goc ? '<span class="t-note">mức đang nhập</span>' : '');
+      const t2 = el('td', 'r'); t2.dataset.lbl = 'Tổng bán ra'; t2.innerHTML = `<span class="num">${nf.format(Math.round(tong))} kg</span>`;
+      const t3 = el('td', 'r'); t3.dataset.lbl = 'Doanh thu'; t3.innerHTML = `<span class="num">${big(r.doanhThu)}</span>`;
+      const t4 = el('td', 'r'); t4.dataset.lbl = 'Lãi tiền mặt';
+      t4.innerHTML = `<span class="num">${(r.laiTienMat < 0 ? '− ' : '') + big(Math.abs(r.laiTienMat))}</span>`;
+      const t5 = el('td', 'r'); t5.dataset.lbl = 'Hoàn vốn'; t5.innerHTML = `<span class="num">${hv}</span>`;
+      const t6 = el('td', 'r');
+      if (kg !== goc) {
+        const b = el('button', 'btn mini', 'dùng mức này');
+        b.addEventListener('click', () => {
+          S.doanhThu.siKg = kg;
+          veNhapLieu(true);
+          toast('Đã đặt bán sỉ ' + nf.format(kg) + ' kg/tháng vào mục 05.');
+        });
+        t6.appendChild(b);
+      }
+      [t1, t2, t3, t4, t5, t6].forEach(td => tr.appendChild(td));
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+
+    // mục tiêu hoàn vốn
+    const fm = document.getElementById('fMucTieu');
+    fm.innerHTML = '';
+    fm.appendChild(fieldsFor(S.giaThiet, 'giaThiet', ['hoanVonMuon']));
+
+    const nam = Math.max(1, +S.giaThiet.hoanVonMuon || 5);
+    const can = siKgCanDe(Math.round(nam * 12));
+    const mt = document.getElementById('mucTieuText');
+    mt.innerHTML = '';
+    const fl = el('div', 'flag in');
+    if (can === null) {
+      fl.classList.add('warn');
+      fl.appendChild(el('span', 'tri'));
+      fl.appendChild(el('span', null, `Bán thêm bao nhiêu cũng không hoàn vốn trong ${nam} năm — giá bán đang quá sát giá vốn.`));
+    } else {
+      const r = tinhVoiSiKg(can);
+      const tongKg = r.siKg + r.leKg + r.soLy * (+S.giaVonLy.caPheGam || 0) / 1000;
+      const NANG_SUAT = 18;          // kg/giờ — máy 6 kg, mẻ 20 phút
+      const NGAY_RANG = 26;          // ngày rang trong tháng
+      const kgNgay = tongKg / NGAY_RANG;
+      fl.textContent = `Muốn hoàn vốn trong ${nam} năm thì phải bán sỉ khoảng `
+        + `${nf.format(Math.ceil(can / 10) * 10)} kg/tháng — tức ${nf.format(Math.ceil(tongKg / 10) * 10)} kg cà phê rang mỗi tháng, `
+        + `doanh thu ${big(r.doanhThu)}/tháng. Quy ra ${nf2.format(Math.round(kgNgay))} kg/ngày, `
+        + `khoảng ${nf2.format(Math.round(kgNgay / NANG_SUAT * 10) / 10)} giờ đứng máy mỗi ngày `
+        + `(máy 6 kg rang ~${NANG_SUAT} kg/giờ, 26 ngày/tháng).`;
+      if (kgNgay / NANG_SUAT > 8) {
+        fl.classList.add('warn');
+        fl.insertBefore(el('span', 'tri'), fl.firstChild);
+      }
+    }
+    mt.appendChild(fl);
+  }
+
   /* ---------------- vẽ bảng nhập ---------------- */
 
   function inpCell(val, cls, path) {
@@ -602,6 +705,9 @@
         ? ['VAT mua sắm còn khấu trừ', 'hết tháng ' + R.thangHetVatDauTu, 'sub']
         : ['VAT trả khi mua sắm', big(R.vatCapex) + (R.laDN ? '' : ' — không khấu trừ'), 'sub']
     ]);
+
+    // --- thang sản lượng ---
+    veThangSanLuong();
 
     // --- biểu đồ + bảng dòng tiền ---
     CHART.draw(document.getElementById('chart'), R.series, R.beMonth,
