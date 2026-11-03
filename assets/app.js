@@ -1,0 +1,737 @@
+/* ============================================================
+   TÍNH TOÁN + GIAO DIỆN
+   Trang tĩnh, không máy chủ: mỗi người sửa số trên máy mình,
+   lưu bằng localStorage, chia sẻ bằng link có bộ số nhúng trong
+   địa chỉ. Bản gốc trong data.js không bao giờ bị ghi đè.
+   ============================================================ */
+(function () {
+  'use strict';
+
+  const KEY = 'mo-xuong-rang/v1';
+  const $ = s => document.querySelector(s);
+  const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h != null) n.innerHTML = h; return n; };
+
+  let S = null;          // bộ số đang dùng
+  let SC = 1;            // hệ số kịch bản doanh thu
+  let R = null;          // kết quả tính
+  let veLaiHieuUng = true; // có chạy lại hiệu ứng vẽ biểu đồ không
+
+  /* ---------------- số: đọc và viết ---------------- */
+
+  // Nhận mọi cách gõ quen tay: 235tr · 235.000.000 · 235 000 000 · 1,5 tỷ · 95k
+  function parseNum(raw) {
+    if (raw == null) return NaN;
+    let s = String(raw).toLowerCase().trim().replace(/\s|đ|vnd|₫/g, '');
+    if (!s) return 0;
+    let mult = 1;
+    const suf = [[/(tỷ|ty|tỉ|ti|b)$/, 1e9], [/(triệu|trieu|tr|m)$/, 1e6], [/(nghìn|nghin|ngàn|ngan|ng|k)$/, 1e3]];
+    for (const [re, m] of suf) { if (re.test(s)) { s = s.replace(re, ''); mult = m; break; } }
+    const hasDot = s.includes('.'), hasCom = s.includes(',');
+    if (hasDot && hasCom) s = s.replace(/\./g, '').replace(',', '.');
+    else if (hasCom) s = s.replace(',', '.');
+    else if (hasDot) s = /\.\d{3}(\D|$)/.test(s) || /^\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g, '') : s;
+    const v = parseFloat(s);
+    return isNaN(v) ? NaN : v * mult;
+  }
+
+  const nf = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 });
+  const nf2 = new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 });
+  const money = v => nf.format(Math.round(v || 0));
+  function big(v) {
+    const a = Math.abs(v);
+    if (a >= 1e9) return nf2.format(v / 1e9) + ' tỷ';
+    if (a >= 1e6) return nf.format(Math.round(v / 1e6)) + ' tr';
+    return money(v);
+  }
+  const pct = v => nf2.format(v) + '%';
+
+  /* ---------------- bộ số: nạp, lưu, chia sẻ ---------------- */
+
+  const clone = o => JSON.parse(JSON.stringify(o));
+
+  function blank() {
+    return {
+      capex: DATA.capex.map(g => clone(g.rows)),
+      opex: clone(DATA.opex),
+      giaVon: clone(DATA.giaVon),
+      giaVonLy: clone(DATA.giaVonLy),
+      doanhThu: clone(DATA.doanhThu),
+      giaThiet: clone(DATA.giaThiet)
+    };
+  }
+
+  /* Bộ số có thể tới từ link người khác gửi (#d=…), từ localStorage, hoặc từ tệp JSON —
+     đều là dữ liệu NGOÀI. Dựng lại đúng khung mình biết: chỉ nhận khoá hợp lệ, ép kiểu,
+     cắt chuỗi quá dài. Chặn luôn trò nhét "__proto__" vào JSON. */
+  const soSach = (v, mac) => { const n = Number(v); return isFinite(n) ? n : mac; };
+  const chuSach = (v, dai, mac) => (typeof v === 'string' ? v : mac == null ? '' : mac).slice(0, dai);
+
+  function loc(o) {
+    const b = blank();
+    if (!o || typeof o !== 'object') return b;
+    const locHang = h => Array.isArray(h)
+      ? [chuSach(h[0], 160, 'Mục'), soSach(h[1], 0), chuSach(h[2], 16), soSach(h[3], 0), chuSach(h[4], 240)]
+      : null;
+    if (Array.isArray(o.capex)) {
+      b.capex = b.capex.map((goc, i) => Array.isArray(o.capex[i])
+        ? o.capex[i].slice(0, 200).map(locHang).filter(Boolean) : goc);
+    }
+    if (Array.isArray(o.opex)) b.opex = o.opex.slice(0, 200).map(locHang).filter(Boolean);
+    ['giaVon', 'giaVonLy', 'doanhThu', 'giaThiet'].forEach(k => {
+      const src = o[k];
+      if (!src || typeof src !== 'object') return;
+      Object.keys(b[k]).forEach(f => {
+        if (Object.prototype.hasOwnProperty.call(src, f)) b[k][f] = soSach(src[f], b[k][f]);
+      });
+    });
+    return b;
+  }
+
+  function b64enc(obj) {
+    const bytes = new TextEncoder().encode(JSON.stringify(obj));
+    let s = ''; bytes.forEach(b => s += String.fromCharCode(b));
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function b64dec(str) {
+    const s = atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+    const bytes = Uint8Array.from(s, c => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes));
+  }
+
+  function load() {
+    const m = location.hash.match(/d=([A-Za-z0-9\-_]+)/);
+    if (m) { try { return loc(b64dec(m[1])); } catch (e) { /* link hỏng thì dùng số gốc */ } }
+    try { const j = localStorage.getItem(KEY); if (j) return loc(JSON.parse(j)); } catch (e) { }
+    return blank();
+  }
+
+  /* ---------------- tính ---------------- */
+
+  function sumRows(rows) { return rows.reduce((a, r) => a + (+r[1] || 0) * (+r[3] || 0), 0); }
+
+  function tinh() {
+    const g = S.giaVon, l = S.giaVonLy, d = S.doanhThu, t = S.giaThiet;
+
+    // vốn đầu tư
+    const nhom = S.capex.map(sumRows);
+    const thietBi = (nhom[0] || 0) + (nhom[1] || 0);   // phần khấu hao được
+    const capexGoc = nhom.reduce((a, b) => a + b, 0);
+    const duPhong = capexGoc * (+t.duPhong || 0) / 100;
+
+    // chi phí cố định
+    const coDinh = sumRows(S.opex);
+    const quy = coDinh * (+t.quyThang || 0);
+    const vonPhaiCo = capexGoc + duPhong + quy;
+
+    // giá vốn 1 kg rang
+    const hao = Math.min(60, Math.max(0, +g.haoHut || 0));
+    const xanhCan = 1 / (1 - hao / 100);
+    const cXanh = xanhCan * (+g.giaXanh || 0);
+    const cGas = (+g.gasTieuThu || 0) * (+g.gasGia || 0);
+    const cDien = (+g.dienRang || 0) * (+g.dienGia || 0);
+    const cKhac = (+g.baoBi || 0) + (+g.temNhan || 0) + (+g.congRang || 0);
+    const kgThuan = cXanh + cGas + cDien + cKhac;
+    const kgLoi = kgThuan * (+g.hongBo || 0) / 100;
+    const giaVonKg = kgThuan + kgLoi;
+
+    // giá vốn 1 ly
+    const lyCaPhe = (+l.caPheGam || 0) / 1000 * giaVonKg;
+    const giaVonLy = lyCaPhe + (+l.suaDuongSyrup || 0) + (+l.lyNapOngHut || 0) + (+l.daNuoc || 0);
+
+    // doanh thu (có hệ số kịch bản trên LƯỢNG bán)
+    const siKg = (+d.siKg || 0) * SC, leKg = (+d.leKg || 0) * SC;
+    const soLy = (+d.lyNgay || 0) * (+d.ngayMo || 0) * SC;
+    const gcKg = (+d.giaCongKg || 0) * SC;
+
+    const rSi = siKg * (+d.siGia || 0);
+    const rLe = leKg * (+d.leGia || 0);
+    const rLy = soLy * (+d.lyGia || 0);
+    const rGc = gcKg * (+d.giaCongGia || 0);
+    const doanhThu = rSi + rLe + rLy + rGc;
+
+    // giá vốn hàng bán
+    const vSi = siKg * giaVonKg, vLe = leKg * giaVonKg, vLy = soLy * giaVonLy;
+    const gcDonVi = (cGas + cDien + (+g.congRang || 0)) * (1 + (+g.hongBo || 0) / 100); // khách tự mang cà phê
+    const vGc = gcKg * gcDonVi;
+    const bienPhi = vSi + vLe + vLy + vGc;
+
+    const laiGop = doanhThu - bienPhi;
+    const laiTienMat = laiGop - coDinh;
+    const khauHao = thietBi / Math.max(1, (+t.khauHaoNam || 1) * 12);
+    const laiKeToan = laiTienMat - khauHao;
+
+    const tyLeGop = doanhThu > 0 ? laiGop / doanhThu : 0;
+    const dtHoaVon = tyLeGop > 0 ? coDinh / tyLeGop : Infinity;
+
+    // kg cần bán để hoà vốn nếu chỉ bán cà phê rang giá sỉ
+    const gopSiKg = (+d.siGia || 0) - giaVonKg;
+    const kgHoaVon = gopSiKg > 0 ? coDinh / gopSiKg : Infinity;
+    // ly cần bán mỗi ngày để hoà vốn nếu chỉ bán tại quầy
+    const gopLy = (+d.lyGia || 0) - giaVonLy;
+    const lyHoaVon = gopLy > 0 && +d.ngayMo ? coDinh / gopLy / (+d.ngayMo) : Infinity;
+
+    // dòng tiền, có nhịp chạy dần: biểu đồ vẽ 24 tháng, mốc hoàn vốn dò tới 120 tháng
+    const f = [1, 2, 3].map(i => (+t['thangChay' + i] || 0) / 100);
+    const series = [{ thang: 0, tien: -(capexGoc + duPhong) }];
+    let cum = -(capexGoc + duPhong), beMonth = null;
+    for (let m = 1; m <= 120; m++) {
+      const cs = m <= 3 ? f[0] : m <= 6 ? f[1] : f[2];
+      cum += doanhThu * cs - bienPhi * cs - coDinh;
+      if (m <= 24) series.push({ thang: m, tien: cum });
+      if (beMonth === null && cum >= 0) beMonth = m;
+    }
+
+    return {
+      nhom, capexGoc, duPhong, quy, vonPhaiCo, thietBi,
+      coDinh, giaVonKg, giaVonLy, cXanh, cGas, cDien, cKhac, kgLoi, xanhCan, lyCaPhe,
+      doanhThu, rSi, rLe, rLy, rGc, siKg, leKg, soLy, gcKg,
+      bienPhi, vSi, vLe, vLy, vGc, laiGop, laiTienMat, khauHao, laiKeToan,
+      tyLeGop, dtHoaVon, kgHoaVon, lyHoaVon, series, beMonth
+    };
+  }
+
+  /* ---------------- vẽ bảng nhập ---------------- */
+
+  function inpCell(val, cls, path) {
+    const i = el('input', 'inp ' + (cls || ''));
+    i.type = 'text';
+    i.inputMode = 'decimal';
+    i.value = typeof val === 'number' ? nf2.format(val) : val;
+    i.dataset.path = path;
+    return i;
+  }
+
+  function rowEl(r, path, onDel) {
+    const tr = el('tr', 'rail');
+
+    const tdName = el('td');
+    tdName.dataset.lbl = 'Mục';
+    // tên mục: khối sửa tại chỗ (không dùng <input> vì input không xuống dòng,
+    // tên dài như "Dụng cụ bar + ly + bình ủ…" bị cắt mất đuôi trên điện thoại)
+    const nameIn = el('div', 'inp name');
+    nameIn.contentEditable = 'true';
+    nameIn.spellcheck = false;
+    nameIn.textContent = r[0];
+    nameIn.dataset.path = path + '.0';
+    nameIn.setAttribute('role', 'textbox');
+    nameIn.setAttribute('aria-label', 'Tên mục: ' + r[0]);
+    tdName.appendChild(nameIn);
+    if (r[4]) { const nt = el('span', 't-note'); nt.textContent = r[4]; tdName.appendChild(nt); }
+
+    const tdQty = el('td', 'r'); tdQty.dataset.lbl = 'Số lượng';
+    const q = inpCell(+r[1], 'w-qty', path + '.1');
+    q.setAttribute('aria-label', r[0] + ' — số lượng');
+    tdQty.appendChild(q);
+    const un = el('span', 'unit'); un.textContent = ' ' + r[2]; tdQty.appendChild(un);
+
+    const tdPrice = el('td', 'r'); tdPrice.dataset.lbl = 'Đơn giá (đồng)';
+    const pr = inpCell(+r[3], 'w-price', path + '.3');
+    pr.setAttribute('aria-label', r[0] + ' — đơn giá');
+    tdPrice.appendChild(pr);
+
+    const tdSum = el('td', 'r'); tdSum.dataset.lbl = 'Thành tiền';
+    tdSum.appendChild(el('span', 'cell-money', money((+r[1] || 0) * (+r[3] || 0))));
+
+    const tdDel = el('td', 'r');
+    const b = el('button', 'btn mini ghost', '×');
+    b.title = 'Bỏ dòng này'; b.setAttribute('aria-label', 'Bỏ dòng ' + r[0]);
+    b.addEventListener('click', onDel);
+    tdDel.appendChild(b);
+
+    [tdName, tdQty, tdPrice, tdSum, tdDel].forEach(td => tr.appendChild(td));
+    return tr;
+  }
+
+  function tableFor(rows, basePath, title, onChange) {
+    const box = el('div', 'rv-f');
+    const tbl = el('table', 'tbl');
+    if (title) tbl.appendChild(el('caption', null, title));
+    tbl.appendChild(el('thead', null,
+      '<tr><th>Mục</th><th class="r">Số lượng</th><th class="r">Đơn giá (đồng)</th><th class="r">Thành tiền</th><th></th></tr>'));
+    const tb = el('tbody');
+    rows.forEach((r, i) => tb.appendChild(rowEl(r, basePath + '.' + i, () => { rows.splice(i, 1); onChange(true); })));
+    const sum = el('tr', 't-sum', `<td>Cộng</td><td></td><td></td><td class="r"><span class="cell-money">${money(sumRows(rows))}</span></td><td></td>`);
+    tb.appendChild(sum);
+    tbl.appendChild(tb);
+    box.appendChild(tbl);
+
+    const add = el('button', 'btn mini', '+ thêm dòng');
+    add.style.marginTop = '12px';
+    add.addEventListener('click', () => { rows.push(['Mục mới', 1, 'cái', 0, '']); onChange(true); });
+    box.appendChild(add);
+    return box;
+  }
+
+  function fieldsFor(obj, basePath, keys) {
+    const frag = document.createDocumentFragment();
+    keys.forEach(k => {
+      const [lbl, unit] = NHAN[k] || [k, ''];
+      const f = el('div', 'field rv-f');
+      f.appendChild(el('label', null, lbl));
+      const row = el('div', 'row');
+      const ip = inpCell(obj[k], '', basePath + '.' + k);
+      ip.setAttribute('aria-label', lbl + (unit ? ' (' + unit + ')' : ''));
+      row.appendChild(ip);
+      const un = el('span', 'unit'); un.textContent = unit; row.appendChild(un);
+      f.appendChild(row);
+      frag.appendChild(f);
+    });
+    return frag;
+  }
+
+  /* ---------------- vẽ kết quả ---------------- */
+
+  function setTxt(id, text) {
+    const n = document.getElementById(id);
+    if (!n) return;
+    const old = n.textContent;
+    if (old === text) return;
+    n.textContent = text;
+    n.classList.remove('skeleton', 'up', 'down');
+    void n.offsetWidth;
+    const a = parseNum(old.replace(/[^\d.,-]/g, '')), b = parseNum(text.replace(/[^\d.,-]/g, ''));
+    n.classList.add(!isNaN(a) && !isNaN(b) && b < a ? 'down' : 'up');
+  }
+
+  function plRows(tbody, rows) {
+    tbody.innerHTML = rows.map(r => {
+      if (r === '-') return '<tr><td colspan="2" style="padding:0"><div class="hr in"></div></td></tr>';
+      const cls = r[2] === 'big' ? ' class="big"' : r[2] === 'sub' ? ' class="sub"' : '';
+      return `<tr${cls}><td>${r[0]}</td><td class="r">${r[1]}</td></tr>`;
+    }).join('');
+  }
+
+  function thangNam(m) {
+    if (m == null) return 'không hoàn được';
+    if (m < 12) return m + ' tháng';
+    const y = Math.floor(m / 12), r = m % 12;
+    return y + ' năm' + (r ? ' ' + r + ' tháng' : '');
+  }
+
+  function veKetQua() {
+    R = tinh();
+
+    // --- 4 ô số lớn ---
+    setTxt('kVon', big(R.vonPhaiCo));
+    document.getElementById('kVonNote').textContent =
+      `${big(R.capexGoc)} mua sắm + ${big(R.duPhong)} dự phòng + ${big(R.quy)} quỹ ${S.giaThiet.quyThang} tháng`;
+    setTxt('kThang', big(R.coDinh + R.bienPhi));
+    document.getElementById('kThangNote').textContent =
+      `${big(R.coDinh)} cố định + ${big(R.bienPhi)} theo hàng bán`;
+    setTxt('kLai', (R.laiTienMat < 0 ? '−' : '') + big(Math.abs(R.laiTienMat)));
+    document.getElementById('kLaiNote').textContent =
+      R.laiKeToan >= 0 ? `Sau khấu hao vẫn lãi ${big(R.laiKeToan)}` : `Trừ khấu hao ${big(R.khauHao)} thì lỗ ${big(Math.abs(R.laiKeToan))}`;
+    setTxt('kHoanVon', R.beMonth ? thangNam(R.beMonth) : 'không hoàn được');
+    document.getElementById('kHoanVonNote').textContent = R.beMonth
+      ? (R.beMonth <= 24 ? 'thấy rõ trên biểu đồ ở mục 06' : 'biểu đồ mục 06 chỉ vẽ 24 tháng đầu')
+      : 'mỗi tháng đang âm — vốn không quay lại';
+
+    const kp = document.getElementById('kpiPayback');
+    kp.classList.toggle('warn', !R.beMonth || R.beMonth > 36);
+
+    // --- thanh hoà vốn ---
+    const p = R.dtHoaVon > 0 && isFinite(R.dtHoaVon) ? Math.min(100, R.doanhThu / R.dtHoaVon * 100) : 0;
+    document.getElementById('beFill').style.width = p.toFixed(1) + '%';
+    document.getElementById('beText').innerHTML = isFinite(R.dtHoaVon)
+      ? `Doanh thu hoà vốn <b>${big(R.dtHoaVon)}/tháng</b>. Đang nhập <b>${big(R.doanhThu)}</b> — ${R.doanhThu >= R.dtHoaVon
+        ? `vượt ${big(R.doanhThu - R.dtHoaVon)}` : `còn thiếu ${big(R.dtHoaVon - R.doanhThu)}`}.`
+      : 'Giá bán chưa cao hơn giá vốn — không có điểm hoà vốn. Phải sửa giá bán hoặc giá vốn.';
+
+    const fb = document.getElementById('flagBox');
+    fb.innerHTML = '';
+    const flag = el('div', 'flag in');
+    if (R.laiTienMat < 0) {
+      flag.classList.add('warn');
+      flag.appendChild(el('span', 'tri'));
+      flag.appendChild(el('span', null, `Mỗi tháng âm ${big(Math.abs(R.laiTienMat))} — quỹ ${big(R.quy)} chịu được ${Math.floor(R.quy / Math.abs(R.laiTienMat))} tháng`));
+    } else {
+      flag.innerHTML = `<span>Hoà vốn nếu bán ${isFinite(R.kgHoaVon) ? nf.format(Math.ceil(R.kgHoaVon)) + ' kg/tháng giá sỉ' : '—'}`
+        + `, hoặc ${isFinite(R.lyHoaVon) ? nf.format(Math.ceil(R.lyHoaVon)) + ' ly/ngày' : '—'} tại quầy</span>`;
+    }
+    fb.appendChild(flag);
+
+    // --- cơ cấu một tháng ---
+    // tìm theo TÊN mục (người xem có thể xoá/thêm dòng nên không dựa vào số thứ tự)
+    const opexCo = (re) => S.opex.reduce((a, r) => a + (re.test(r[0]) ? (+r[1] || 0) * (+r[3] || 0) : 0), 0);
+    const nhanSu = opexCo(/l[uư]ơng|bhxh|ph[uụ] c[aấ]p/i);
+    const thue = opexCo(/thu[eê] m[aặ]t b[aằ]ng|thu[eê] nh[aà]/i);
+    const dt = R.doanhThu || 1;
+    const share = [
+      ['Giá vốn hàng bán', R.bienPhi],
+      ['Nhân sự', nhanSu],
+      ['Thuê mặt bằng', thue],
+      ['Cố định khác', Math.max(0, R.coDinh - nhanSu - thue)],
+      [R.laiTienMat >= 0 ? 'Còn lại (lãi)' : 'Thiếu hụt', Math.abs(R.laiTienMat)]
+    ];
+    const sb = document.getElementById('shareBox');
+    sb.innerHTML = '';
+    share.forEach(([name, v]) => {
+      const row = el('div', 'share-row');
+      const w = Math.min(100, Math.abs(v) / dt * 100);
+      row.innerHTML = `<div>${name}</div><div class="share-track"><div class="share-fill" style="width:${w.toFixed(1)}%"></div></div><div class="num">${pct(v / dt * 100)}</div>`;
+      sb.appendChild(row);
+      io.observe(row);
+    });
+
+    // --- tổng vốn ---
+    document.getElementById('capexTotal').textContent = money(R.vonPhaiCo);
+
+    // --- giá vốn 1 kg ---
+    plRows(document.getElementById('plKg'), [
+      ['Cà phê xanh (' + nf2.format(R.xanhCan) + ' kg xanh cho 1 kg rang)', money(R.cXanh), 'sub'],
+      ['Gas LPG', money(R.cGas), 'sub'],
+      ['Điện rang', money(R.cDien), 'sub'],
+      ['Bao bì + tem + công đứng máy', money(R.cKhac), 'sub'],
+      ['Mẻ lỗi', money(R.kgLoi), 'sub'],
+      '-',
+      ['Giá vốn 1 kg rang', money(R.giaVonKg) + ' đ', 'big'],
+      ['Lãi gộp 1 kg bán sỉ ' + money(S.doanhThu.siGia) + ' đ', money(S.doanhThu.siGia - R.giaVonKg) + ' đ'],
+      ['Lãi gộp 1 kg bán lẻ ' + money(S.doanhThu.leGia) + ' đ', money(S.doanhThu.leGia - R.giaVonKg) + ' đ']
+    ]);
+
+    plRows(document.getElementById('plLy'), [
+      ['Cà phê trong ly (' + nf2.format(S.giaVonLy.caPheGam) + ' g)', money(R.lyCaPhe), 'sub'],
+      ['Sữa, đường, syrup', money(S.giaVonLy.suaDuongSyrup), 'sub'],
+      ['Ly, nắp, ống hút', money(S.giaVonLy.lyNapOngHut), 'sub'],
+      ['Đá, nước', money(S.giaVonLy.daNuoc), 'sub'],
+      '-',
+      ['Giá vốn 1 ly', money(R.giaVonLy) + ' đ', 'big'],
+      ['Lãi gộp 1 ly bán ' + money(S.doanhThu.lyGia) + ' đ', money(S.doanhThu.lyGia - R.giaVonLy) + ' đ'],
+      ['Tỉ lệ giá vốn trên giá bán', pct(S.doanhThu.lyGia ? R.giaVonLy / S.doanhThu.lyGia * 100 : 0)]
+    ]);
+
+    // --- doanh thu ---
+    plRows(document.getElementById('plRev'), [
+      ['Bán sỉ · ' + nf.format(R.siKg) + ' kg', money(R.rSi), 'sub'],
+      ['Bán lẻ + online · ' + nf.format(R.leKg) + ' kg', money(R.rLe), 'sub'],
+      ['Quầy take away · ' + nf.format(R.soLy) + ' ly', money(R.rLy), 'sub'],
+      ['Rang gia công · ' + nf.format(R.gcKg) + ' kg', money(R.rGc), 'sub'],
+      '-',
+      ['Doanh thu một tháng', money(R.doanhThu) + ' đ', 'big'],
+      ['Tổng cà phê rang bán ra', nf.format(R.siKg + R.leKg) + ' kg/tháng'],
+      ['Cà phê xanh phải mua', nf.format(Math.ceil((R.siKg + R.leKg + R.soLy * S.giaVonLy.caPheGam / 1000) * R.xanhCan)) + ' kg/tháng']
+    ]);
+
+    // --- P&L tháng ---
+    plRows(document.getElementById('plMonth'), [
+      ['Doanh thu', money(R.doanhThu)],
+      ['Giá vốn hàng bán', '− ' + money(R.bienPhi), 'sub'],
+      ['Lãi gộp (' + pct(R.tyLeGop * 100) + ')', money(R.laiGop)],
+      ['Chi phí cố định', '− ' + money(R.coDinh), 'sub'],
+      '-',
+      ['Tiền thật còn lại mỗi tháng', (R.laiTienMat < 0 ? '− ' : '') + money(Math.abs(R.laiTienMat)) + ' đ', 'big'],
+      ['Khấu hao thiết bị (' + S.giaThiet.khauHaoNam + ' năm)', '− ' + money(R.khauHao), 'sub'],
+      ['Lãi kế toán', (R.laiKeToan < 0 ? '− ' : '') + money(Math.abs(R.laiKeToan)) + ' đ']
+    ]);
+
+    // --- biểu đồ + bảng dòng tiền ---
+    CHART.draw(document.getElementById('chart'), R.series, R.beMonth,
+      document.getElementById('tip'), document.getElementById('trail'));
+    // chỉ chạy lại hiệu ứng vẽ đường khi đổi kịch bản — gõ số thì cập nhật im lặng
+    const hint = document.querySelector('.chart-hint');
+    if (hint) hint.textContent = R.beMonth && R.beMonth <= 24
+      ? `Đường đi xuống trước, chạm đáy rồi leo lên và cắt vạch 0 ở tháng ${R.beMonth} — đó là lúc lấy lại đủ vốn. Rê chuột (hoặc chạm) lên biểu đồ để xem từng tháng.`
+      : R.beMonth
+        ? `Trong 24 tháng đầu đường chưa chạm vạch 0: theo nhịp đang nhập thì tới tháng ${R.beMonth} mới lấy lại đủ vốn. Rê chuột (hoặc chạm) lên biểu đồ để xem từng tháng.`
+        : 'Đường đi xuống mãi — với bộ số đang nhập thì vốn không quay lại. Phải sửa giá bán, sản lượng hoặc chi phí.';
+
+    const cb = document.getElementById('chartBox');
+    if (veLaiHieuUng) { cb.classList.remove('in'); void cb.offsetWidth; cb.classList.add('in'); veLaiHieuUng = false; }
+    else cb.classList.add('in');
+
+    const pick = [3, 6, 12, 18, 24];
+    plRows(document.getElementById('plCash'), pick.map(m => {
+      const d = R.series[m];
+      return ['Hết tháng ' + m, (d.tien < 0 ? '− ' : '') + money(Math.abs(d.tien)) + ' đ', 'sub'];
+    }).concat([['Hoàn vốn', R.beMonth ? 'tháng ' + R.beMonth : 'chưa, trong 24 tháng', 'big']]));
+  }
+
+  /* ---------------- ghi chú ---------------- */
+
+  const NOTES = [
+    ['Năm khoản làm vỡ dự toán nhiều nhất', `
+      <ul>
+        <li><b>Sửa mặt bằng.</b> Nhà thuê 60 m² hiếm khi có sẵn thoát nước, hút mùi và điện đủ tải. Khoản 45 triệu trong bảng là mức "nhà tạm được"; nhà thô có thể gấp đôi.</li>
+        <li><b>Ống khói và PCCC.</b> Rang bằng gas trong khu dân cư phải có đường khói lên cao, kẹp đúng tường nhà thuê, bình chữa cháy và hồ sơ. Nhiều người bỏ qua tới lúc bị kiểm tra.</li>
+        <li><b>Điện ba pha.</b> Máy 6 kg có hệ tự động nên đi ba pha; xin hạ bình, kéo nhánh và dựng tủ là một khoản riêng, không nằm trong giá máy.</li>
+        <li><b>Hao hụt rang.</b> Sai 2% hao hụt là lệch giá vốn vài nghìn đồng mỗi kg — nhân 200 kg mỗi tháng thành tiền thật.</li>
+        <li><b>Đọng vốn cà phê xanh.</b> Mua rẻ theo bao lớn thì tiền nằm trong kho; bảng này chỉ tính lô đầu 300 kg.</li>
+      </ul>`],
+    ['Vì sao hoàn vốn lâu hơn cảm giác', `
+      <p>Riêng ba món máy rang, hệ tự động và tách đá đã là 325 triệu — tài sản nặng chỉ sinh lời khi chạy nhiều mẻ.
+      Máy 6 kg rang được khoảng 18 kg mỗi giờ, nên công suất không phải giới hạn; giới hạn là <b>bán được bao nhiêu</b>.</p>
+      <p>Thước đo đáng tin nhất của mô hình này: <b>mỗi tháng bán được bao nhiêu kg</b>. Con số hoà vốn tính sẵn ở mục 01;
+      dưới mức đó thì quán cóc chỉ đang nuôi cái xưởng.</p>`],
+    ['Khói, mùi và hàng xóm', `
+      <p>Quán cóc trong khu dân cư, rang vài mẻ liền là có mùi và khói. Hai cách xử lý: rang lệch giờ, hoặc lắp buồng đốt khói —
+      khoản này <b>chưa nằm trong bảng</b> vì tuỳ chỗ. Nếu chủ nhà hoặc hàng xóm phản ứng thì đó là chi phí bắt buộc, cộng thêm vào mục 02.</p>`],
+    ['Những gì bảng này chưa tính', `
+      <ul>
+        <li>Lãi vay nếu vay vốn mua máy.</li>
+        <li>Thuê mặt bằng tăng sau mỗi kỳ hạn hợp đồng.</li>
+        <li>Sửa máy lớn, thay vòng bi, đại tu bếp.</li>
+        <li>Thuế: bảng dùng mức thuế khoán hộ kinh doanh gộp trong dòng "kế toán + thuế"; lên công ty có VAT và thuế thu nhập thì khác.</li>
+        <li>Lương chủ: để 0 nghĩa là chủ đứng quán không lấy lương — nếu phải thuê người thay, cộng vào mục 02.</li>
+      </ul>`],
+    ['Cách kiểm lại số của riêng mình', `
+      <ol>
+        <li>Xin báo giá ba nơi cho từng món trên 10 triệu, điền đúng vào bảng.</li>
+        <li>Đi hỏi thuê ba mặt bằng cùng khu, lấy giá và tiền cọc thật.</li>
+        <li>Rang gia công hoặc bán thử một tháng trước khi mua máy — để biết thật sự bán được bao nhiêu kg.</li>
+        <li>Đặt kịch bản xấu ở mục 06 rồi xem quỹ sống sót chịu được mấy tháng. Chịu dưới ba tháng là chưa nên mở.</li>
+      </ol>`]
+  ];
+
+  function veGhiChu() {
+    const box = document.getElementById('notes');
+    NOTES.forEach(([t, h], i) => {
+      const d = el('details', 'rv-f');
+      if (i === 0) d.open = true;
+      d.innerHTML = `<summary><span>${t}</span></summary><div class="dt-body">${h}</div>`;
+      box.appendChild(d);
+    });
+  }
+
+  /* ---------------- hiệu ứng ---------------- */
+
+  const io = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: .12, rootMargin: '0px 0px -8% 0px' });
+
+  function quetHieuUng(root) {
+    (root || document).querySelectorAll('.rv,.rv-f,.rv-l,.rv-r,.rv-clip,.hr,.vr,.title-rule,.sec-rule,.kpi,.sec-no,.m-word,.m-split,.svg-fig,.be-track,tr.rail,.chart-box,.flag,.ok-check')
+      .forEach(n => { if (!n.classList.contains('in')) io.observe(n); });
+  }
+
+  function tachChu(node) {
+    const txt = node.textContent;
+    node.textContent = '';
+    [...txt].forEach(c => {
+      const s = el('span', 'ch', c === ' ' ? '&nbsp;' : c);
+      node.appendChild(s);
+    });
+    node.classList.add('m-split');
+  }
+
+  function chayTicker() {
+    const items = [
+      'mặt bằng 60 m² · 10 triệu/tháng',
+      '5 chỗ ngồi · bán mang đi',
+      'máy rang 6 kg · 235 triệu',
+      'hệ tự động · 55 triệu',
+      'máy tách đá · 35 triệu',
+      'số liệu ước tính 11/2026',
+      'sửa được mọi con số',
+      'lưu pdf một nút'
+    ];
+    const t = document.getElementById('ticker');
+    const html = items.map(s => `<span>${s}</span><span>·</span>`).join('');
+    t.innerHTML = html + html;
+  }
+
+  function thanhCuon() {
+    const bar = document.getElementById('sbar');
+    const links = [...document.querySelectorAll('.nav-links a')];
+    const secs = links.map(a => document.querySelector(a.getAttribute('href')));
+    let raf = 0;
+    function up() {
+      raf = 0;
+      const h = document.documentElement;
+      const p = h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight);
+      bar.style.transform = `scaleX(${p})`;
+      const y = h.scrollTop + 120;
+      let cur = 0;
+      secs.forEach((s, i) => { if (s && s.offsetTop <= y) cur = i; });
+      links.forEach((a, i) => a.classList.toggle('on', i === cur));
+    }
+    addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(up); }, { passive: true });
+    up();
+  }
+
+  /* ---------------- thông báo ---------------- */
+
+  let toastT = 0;
+  function toast(msg) {
+    const n = document.getElementById('toast');
+    n.textContent = msg;
+    n.classList.remove('hide'); n.classList.add('show');
+    clearTimeout(toastT);
+    toastT = setTimeout(() => { n.classList.remove('show'); n.classList.add('hide'); setTimeout(() => n.className = 'toast', 260); }, 2400);
+  }
+
+  /* ---------------- gắn sự kiện sửa số ---------------- */
+
+  function setPath(path, val) {
+    const parts = path.split('.');
+    let o = S;
+    for (let i = 0; i < parts.length - 1; i++) o = o[parts[i]];
+    const last = parts[parts.length - 1];
+    o[isNaN(+last) ? last : +last] = val;
+  }
+
+  let tdebounce = 0;
+  function onInput(ev) {
+    const i = ev.target;
+    if (!i.classList.contains('inp')) return;
+    const path = i.dataset.path;
+    if (!path) return;
+
+    if (i.classList.contains('name')) { setPath(path, i.textContent.trim()); return; }
+
+    const v = parseNum(i.value);
+    i.classList.remove('bad');
+    if (isNaN(v)) { i.classList.add('bad'); return; }      // giữ nguyên chữ đã gõ, chỉ báo chỗ sai
+    setPath(path, v);
+
+    i.classList.remove('touched'); void i.offsetWidth; i.classList.add('touched');
+    const tr = i.closest('tr');
+    if (tr) {
+      tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
+      const cell = tr.querySelector('.cell-money');
+      if (cell) {
+        const r = pathRow(path);
+        if (r) cell.textContent = money((+r[1] || 0) * (+r[3] || 0));
+        cell.classList.remove('bump'); void cell.offsetWidth; cell.classList.add('bump');
+      }
+      const body = tr.closest('tbody');
+      const sumCell = body && body.querySelector('.t-sum .cell-money');
+      if (sumCell) sumCell.textContent = money(sumRows(pathRows(path)));
+    }
+
+    clearTimeout(tdebounce);
+    tdebounce = setTimeout(veKetQua, 160);
+    document.getElementById('saveState').innerHTML = '<span class="badge pop">chưa lưu</span>';
+  }
+
+  function pathRows(path) {
+    const p = path.split('.');
+    return p[0] === 'capex' ? S.capex[+p[1]] : S.opex;
+  }
+  function pathRow(path) {
+    const p = path.split('.');
+    return p[0] === 'capex' ? S.capex[+p[1]][+p[2]] : S.opex[+p[1]];
+  }
+
+  /* ---------------- dựng trang ---------------- */
+
+  function veNhapLieu(keepScroll) {
+    const y = keepScroll ? scrollY : null;
+
+    const cb = document.getElementById('capexBox');
+    cb.innerHTML = '';
+    DATA.capex.forEach((g, i) => {
+      const wrap = el('div');
+      wrap.style.marginTop = i ? '33px' : '22px';
+      wrap.appendChild(tableFor(S.capex[i], 'capex.' + i, g.ma + ' — ' + g.nhom, veNhapLieu));
+      cb.appendChild(wrap);
+    });
+
+    const ce = document.getElementById('capexExtra');
+    ce.innerHTML = '';
+    ce.appendChild(fieldsFor(S.giaThiet, 'giaThiet', ['duPhong', 'quyThang']));
+
+    const ob = document.getElementById('opexBox');
+    ob.innerHTML = '';
+    ob.appendChild(tableFor(S.opex, 'opex', null, veNhapLieu));
+
+    const f1 = document.getElementById('fGiaVon');
+    f1.innerHTML = ''; f1.appendChild(fieldsFor(S.giaVon, 'giaVon', Object.keys(DATA.giaVon)));
+    const f2 = document.getElementById('fGiaVonLy');
+    f2.innerHTML = ''; f2.appendChild(fieldsFor(S.giaVonLy, 'giaVonLy', Object.keys(DATA.giaVonLy)));
+    const f3 = document.getElementById('fDoanhThu');
+    f3.innerHTML = ''; f3.appendChild(fieldsFor(S.doanhThu, 'doanhThu', Object.keys(DATA.doanhThu)));
+    const f4 = document.getElementById('fGiaThiet');
+    f4.innerHTML = ''; f4.appendChild(fieldsFor(S.giaThiet, 'giaThiet', ['khauHaoNam', 'thangChay1', 'thangChay2', 'thangChay3']));
+
+    quetHieuUng();
+    veKetQua();
+    if (y != null) scrollTo(0, y);
+  }
+
+  /* ---------------- nút lệnh ---------------- */
+
+  function nutLenh() {
+    document.getElementById('btnPdf').addEventListener('click', () => {
+      document.querySelectorAll('details').forEach(d => d.open = true);
+      setTimeout(() => window.print(), 120);
+    });
+
+    document.getElementById('btnSave').addEventListener('click', () => {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(S));
+        document.getElementById('saveState').innerHTML =
+          '<span class="badge pop">đã lưu vào máy này</span>';
+        toast('Đã lưu. Mở lại trang trên máy này là thấy đúng bộ số vừa nhập.');
+      } catch (e) { toast('Máy không cho lưu (chế độ riêng tư?). Dùng Xuất tệp JSON.'); }
+    });
+
+    document.getElementById('btnLink').addEventListener('click', async () => {
+      const url = location.origin + location.pathname + '#d=' + b64enc(S);
+      try { await navigator.clipboard.writeText(url); toast('Đã chép link vào bộ nhớ tạm — dán cho ai cũng thấy đúng số này.'); }
+      catch (e) { location.hash = 'd=' + b64enc(S); toast('Link đã nằm trên thanh địa chỉ, chép lại để gửi.'); }
+    });
+
+    document.getElementById('btnExport').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+      const a = el('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'chi-phi-mo-xuong-rang.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      toast('Đã tải tệp JSON.');
+    });
+
+    const fileIn = document.getElementById('fileIn');
+    document.getElementById('btnImport').addEventListener('click', () => fileIn.click());
+    fileIn.addEventListener('change', () => {
+      const f = fileIn.files && fileIn.files[0];
+      if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        try {
+          const o = JSON.parse(rd.result);
+          if (!o || !o.capex || !o.opex) throw 0;
+          S = loc(o); veNhapLieu(); toast('Đã nạp bộ số từ tệp.');
+        } catch (e) { toast('Tệp không đúng dạng của trang này.'); }
+      };
+      rd.readAsText(f);
+      fileIn.value = '';
+    });
+
+    document.getElementById('btnReset').addEventListener('click', () => {
+      S = blank();
+      try { localStorage.removeItem(KEY); } catch (e) { }
+      if (location.hash) history.replaceState(null, '', location.pathname);
+      veNhapLieu();
+      document.getElementById('saveState').innerHTML = '<span class="dot"></span>&nbsp; đã về số gốc';
+      toast('Đã trả mọi con số về bản gốc.');
+    });
+
+    document.querySelectorAll('#chips .chip').forEach(c => {
+      c.addEventListener('click', () => {
+        document.querySelectorAll('#chips .chip').forEach(x => x.classList.remove('on'));
+        c.classList.add('on');
+        SC = c.dataset.sc === 'xau' ? .75 : c.dataset.sc === 'tot' ? 1.25 : 1;
+        veLaiHieuUng = true;
+        veKetQua();
+      });
+    });
+  }
+
+  /* ---------------- chạy ---------------- */
+
+  document.addEventListener('DOMContentLoaded', () => {
+    S = load();   // load() đã lọc: thiếu khoá thì lấy số gốc, thừa khoá thì bỏ
+
+    document.getElementById('footDate').textContent = DATA.meta.capNhat;
+    chayTicker();
+    veGhiChu();
+    veNhapLieu();
+    nutLenh();
+    thanhCuon();
+    tachChu(document.querySelector('#tong h2'));
+    quetHieuUng();
+    document.addEventListener('input', onInput);
+    if (location.hash.includes('d=')) toast('Đang xem bộ số từ link chia sẻ. Bấm "Về số gốc" để bỏ.');
+  });
+})();

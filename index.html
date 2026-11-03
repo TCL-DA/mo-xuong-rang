@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chi phí mở xưởng rang + quán cóc take away</title>
+<meta name="description" content="Bảng tính chi phí mở xưởng rang cà phê 6 kg kèm quán cóc take away 5 chỗ ngồi: vốn đầu tư, chi phí hàng tháng, giá vốn 1 kg rang, điểm hoà vốn, thời gian hoàn vốn. Sửa được mọi con số ngay trên trang, lưu PDF.">
+<meta name="theme-color" content="#f6f8f7">
+<meta property="og:title" content="Chi phí mở xưởng rang + quán cóc take away">
+<meta property="og:description" content="Bảng tính mở xưởng rang 6 kg + quán take away: vốn, chi phí tháng, giá vốn, hoà vốn, hoàn vốn. Ai cũng sửa được số.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/base.css?v=1">
+<link rel="stylesheet" href="assets/motion.css?v=1">
+<link rel="stylesheet" href="assets/print.css?v=1" media="print">
+</head>
+<body>
+
+<!-- ======================= THANH TRÊN ======================= -->
+<header class="nav" id="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top"><span class="logo-sq"></span>&nbsp; chi phí mở xưởng rang <span>/ quán cóc</span></a>
+    <nav class="nav-links" id="navlinks">
+      <a href="#tong">tổng kết</a>
+      <a href="#von">vốn đầu tư</a>
+      <a href="#thang">chi phí tháng</a>
+      <a href="#giavon">giá vốn</a>
+      <a href="#doanhthu">doanh thu</a>
+      <a href="#ketqua">kết quả</a>
+      <a href="#ghichu">ghi chú</a>
+    </nav>
+  </div>
+  <div class="scroll-bar" id="sbar"></div>
+</header>
+
+<!-- ======================= ĐẦU TRANG ======================= -->
+<section class="dark hero" id="top">
+  <div class="wrap">
+    <h1 id="h1">
+      <span class="m-word"><i>Mở</i></span> <span class="m-word"><i>xưởng</i></span>
+      <span class="m-word"><i>rang</i></span> <span class="m-word"><i>6&nbsp;kg</i></span>
+      <span class="m-word"><i>kèm</i></span> <span class="m-word"><i>quán</i></span>
+      <span class="m-word"><i>cóc</i></span> <span class="m-word"><i>tốn</i></span>
+      <span class="m-word"><i>bao</i></span> <span class="m-word"><i>nhiêu?</i></span>
+    </h1>
+    <p class="hero-sub m-blur rv-f">Mặt bằng 60&nbsp;m², 10&nbsp;triệu/tháng, 5 chỗ ngồi, bán mang đi — cộng xưởng rang
+      máy 6&nbsp;kg có hệ tự động và máy tách đá. Mọi con số dưới đây <b>sửa được ngay trên trang</b><span class="caret"></span></p>
+
+    <div class="hero-facts rv-f d1">
+      <div>Máy rang 6 kg<b>235 tr</b></div>
+      <div>Hệ tự động<b>55 tr</b></div>
+      <div>Máy tách đá<b>35 tr</b></div>
+      <div>Thuê mặt bằng<b>10 tr/th</b></div>
+    </div>
+
+    <!-- sơ đồ máy rang: trống quay, lửa, hạt rơi, khói -->
+    <div class="svg-fig rv-f d2" style="margin-top:33px">
+      <svg viewBox="0 0 580 224" role="img" aria-label="Sơ đồ: phễu nạp, máy rang trống, bếp gas, khay làm nguội, ống khói, và quầy take away năm chỗ ngồi" style="width:100%;max-width:580px;height:auto">
+        <g fill="none" stroke="#f6f8f7" stroke-width="2" stroke-linecap="square">
+          <!-- phễu nạp + hạt rơi xuống trống -->
+          <path d="M120 22 h76 l-20 30 h-36 z"/>
+          <path d="M152 52 v10"/>
+          <g fill="#f6f8f7" stroke="none">
+            <ellipse class="bean" cx="152" cy="70" rx="5" ry="3.4"/>
+            <ellipse class="bean" cx="141" cy="80" rx="5" ry="3.4"/>
+            <ellipse class="bean" cx="163" cy="82" rx="5" ry="3.4"/>
+          </g>
+          <!-- thân máy + trống quay + bảng điều khiển -->
+          <rect x="92" y="92" width="190" height="78"/>
+          <g class="drum" style="transform-origin:152px 135px"><circle cx="152" cy="135" r="30"/><path d="M152 105 v60 M122 135 h60 M131 114 l42 42 M173 114 l-42 42"/></g>
+          <rect x="196" y="104" width="72" height="62"/>
+          <g fill="#f6f8f7" stroke="none"><circle cx="212" cy="122" r="4"/><circle cx="232" cy="122" r="4"/><circle cx="252" cy="122" r="4"/></g>
+          <path d="M206 142 h52 M206 154 h34"/>
+          <!-- bếp gas dưới thân máy -->
+          <path d="M118 170 v24 h148 v-24"/>
+          <g class="flame"><path d="M138 192 c0-9 8-11 8-20 c7 7 12 9 12 20 z"/></g>
+          <g class="flame" style="animation-delay:.3s"><path d="M186 192 c0-9 8-11 8-20 c7 7 12 9 12 20 z"/></g>
+          <!-- ống khói + khói bay -->
+          <path d="M244 92 v-50 h26 v50"/>
+          <path class="steam" d="M252 42 c-7-11 9-15 2-26"/>
+          <path class="steam s2" d="M262 42 c7-11-9-15-2-26"/>
+          <path class="steam s3" d="M257 38 c-5-10 7-14 1-24"/>
+          <!-- khay làm nguội có cánh đảo -->
+          <path d="M282 134 h26"/>
+          <circle cx="338" cy="140" r="30"/>
+          <path d="M338 140 l22 -14 M338 140 l-24 10"/>
+          <path d="M316 170 v24 M360 170 v24"/>
+          <!-- quầy take away: máy pha, ly, 5 ghế -->
+          <path d="M424 194 v-50 h120 v50"/>
+          <path d="M424 144 h120"/>
+          <rect x="442" y="112" width="44" height="32"/>
+          <path d="M452 144 v8 h12 v-8"/>
+          <path d="M504 128 h18 l-3 16 h-12 z"/>
+          <g fill="#f6f8f7" stroke="none">
+            <circle cx="430" cy="100" r="6"/><circle cx="456" cy="92" r="6"/><circle cx="482" cy="88" r="6"/>
+            <circle cx="508" cy="92" r="6"/><circle cx="534" cy="100" r="6"/>
+          </g>
+        </g>
+        <g fill="#f6f8f7" font-family="Inter, sans-serif" font-size="12" font-weight="700">
+          <text x="92" y="218">XƯỞNG RANG</text>
+          <text x="424" y="218">QUẦY · 5 CHỖ NGỒI</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="ticker" style="margin-top:33px">
+    <div class="ticker-in" id="ticker"></div>
+  </div>
+</section>
+
+<!-- ======================= 1. TỔNG KẾT ======================= -->
+<section id="tong">
+  <div class="wrap">
+    <div class="mono-lbl sec-no rv-f">01 — tổng kết</div>
+    <h2 class="rv" style="font-size:clamp(26px,4vw,40px);margin-top:8px">Bốn con số phải nhớ</h2>
+    <div class="title-rule" style="margin:14px 0 22px;max-width:120px"></div>
+
+    <div class="kpis" id="kpis">
+      <div class="kpi">
+        <div class="k-lbl">Vốn phải có</div>
+        <div class="k-val skeleton" id="kVon">—</div>
+        <div class="k-note" id="kVonNote">gồm dự phòng và quỹ sống sót</div>
+      </div>
+      <div class="kpi">
+        <div class="k-lbl">Chi phí mỗi tháng</div>
+        <div class="k-val skeleton" id="kThang">—</div>
+        <div class="k-note" id="kThangNote">cố định + giá vốn hàng bán</div>
+      </div>
+      <div class="kpi">
+        <div class="k-lbl">Lãi mỗi tháng</div>
+        <div class="k-val skeleton" id="kLai">—</div>
+        <div class="k-note" id="kLaiNote">tiền thật vào túi, chưa trừ khấu hao</div>
+      </div>
+      <div class="kpi" id="kpiPayback">
+        <div class="k-lbl">Hoàn vốn sau</div>
+        <div class="k-val skeleton" id="kHoanVon">—</div>
+        <div class="k-note" id="kHoanVonNote">tính theo nhịp chạy dần ở mục 06</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:33px">
+      <div class="rv-l">
+        <div class="mono-lbl">Đang ở đâu so với điểm hoà vốn</div>
+        <div class="be-track" id="beTrack" style="margin:10px 0"><div class="be-fill" id="beFill" style="width:0%"></div></div>
+        <p class="tiny muted" id="beText">—</p>
+        <div id="flagBox" style="margin-top:14px"></div>
+      </div>
+      <div class="rv-r">
+        <div class="mono-lbl">Cơ cấu một tháng</div>
+        <div class="share" id="shareBox" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 2. VỐN ĐẦU TƯ ======================= -->
+<section id="von">
+  <div class="wrap">
+    <div class="mono-lbl sec-no rv-f">02 — vốn đầu tư (trả một lần)</div>
+    <h2 class="rv" style="font-size:clamp(26px,4vw,40px);margin-top:8px">Mua gì, bao nhiêu tiền</h2>
+    <div class="title-rule" style="margin:14px 0 22px;max-width:120px"></div>
+    <p class="muted rv-f d1">Sửa số lượng hoặc đơn giá là mọi thứ tính lại ngay. Món nào không làm thì để số lượng <b>0</b>.
+      Gõ được cả <b>235tr</b>, <b>235.000.000</b> hay <b>235 000 000</b>.</p>
+
+    <div id="capexBox"></div>
+
+    <div class="fields" id="capexExtra" style="margin-top:33px"></div>
+
+    <table class="tbl" style="margin-top:22px">
+      <tbody>
+        <tr class="t-sum"><td>Tổng vốn phải chuẩn bị</td><td class="r"><span class="cell-money" id="capexTotal">—</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ======================= 3. CHI PHÍ THÁNG ======================= -->
+<section id="thang">
+  <div class="wrap">
+    <div class="mono-lbl sec-no rv-f">03 — chi phí cố định hàng tháng</div>
+    <h2 class="rv" style="font-size:clamp(26px,4vw,40px);margin-top:8px">Tháng nào cũng mất, bán được hay không</h2>
+    <div class="title-rule" style="margin:14px 0 22px;max-width:120px"></div>
+    <div id="opexBox"></div>
+    <p class="tiny muted" style="margin-top:14px">Gas rang, cà phê xanh, bao bì, sữa, ly… không nằm ở đây — chúng đi theo
+      từng kg và từng ly ở mục 04.</p>
+  </div>
+</section>
+
+<!-- ======================= 4. GIÁ VỐN ======================= -->
+<section id="giavon">
+  <div class="wrap">
+    <div class="mono-lbl sec-no rv-f">04 — giá vốn</div>
+    <h2 class="rv" style="font-size:clamp(26px,4vw,40px);margin-top:8px">Một kg cà phê rang, một ly mang đi</h2>
+    <div class="title-rule" style="margin:14px 0 22px;max-width:120px"></div>
+
+    <div class="grid-2">
+      <div class="rv-l">
+        <h3 style="font-size:21px">1 kg cà phê rang</h3>
+        <div class="fields" id="fGiaVon" style="margin-top:14px"></div>
+        <table class="pl" style="margin-top:22px">
+          <tbody id="plKg"></tbody>
+        </table>
+      </div>
+      <div class="rv-r">
+        <h3 style="font-size:21px">1 ly take away</h3>
+        <div class="fields" id="fGiaVonLy" style="margin-top:14px"></div>
+        <table class="pl" style="margin-top:22px">
+          <tbody id="plLy"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 5. DOANH THU ======================= -->
+<section id="doanhthu">
+  <div class="wrap">
+    <div class="mono-lbl sec-no rv-f">05 — doanh thu</div>
+    <h2 class="rv" style="font-size:clamp(26px,4vw,40px);margin-top:8px">Bán được bao nhiêu</h2>
+    <div class="title-rule" style="margin:14px 0 22px;max-width:120px"></div>
+    <p class="muted rv-f d1">Bốn đường tiền của mô hình này: sỉ cho quán khác, bán lẻ và online, ly mang đi tại quầy,
+      và rang gia công cho người khác.</p>
+    <div class="fields" id="fDoanhThu" style="margin-top:22px"></div>
+    <table class="pl" style="margin-top:22px">
+      <tbody id="plRev"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ======================= 6. KẾT QUẢ ======================= -->
+<section id="ketqua">
+  <div class="wrap">
+    <div class="mono-lbl sec-no rv-f">06 — kết quả</div>
+    <h2 class="rv" style="font-size:clamp(26px,4vw,40px);margin-top:8px">Lãi, hoà vốn, hoàn vốn</h2>
+    <div class="title-rule" style="margin:14px 0 22px;max-width:120px"></div>
+
+    <div class="chips" id="chips" style="margin-bottom:26px">
+      <button class="chip" data-sc="xau">Kịch bản xấu − 25% doanh thu</button>
+      <button class="chip on" data-sc="thuong">Như đang nhập</button>
+      <button class="chip" data-sc="tot">Kịch bản tốt + 25% doanh thu</button>
+    </div>
+
+    <div class="grid-2 wide-right">
+      <div class="rv-l">
+        <div class="mono-lbl">Một tháng khi đã chạy đủ công suất</div>
+        <table class="pl" style="margin-top:12px"><tbody id="plMonth"></tbody></table>
+        <div class="fields" id="fGiaThiet" style="margin-top:26px"></div>
+      </div>
+      <div class="rv-r">
+        <div class="mono-lbl">Tiền trong tay qua 24 tháng</div>
+        <div class="chart-box" id="chartBox" style="margin-top:12px">
+          <div class="scan"></div>
+          <div class="trail" id="trail"></div>
+          <div class="tip" id="tip"></div>
+          <div id="chart"></div>
+        </div>
+        <p class="chart-hint">Đường đi xuống trước, chạm đáy rồi mới leo lên — chỗ cắt vạch 0 là lúc lấy lại đủ vốn.
+          Rê chuột (hoặc chạm) lên biểu đồ để xem từng tháng.</p>
+        <table class="pl" style="margin-top:14px"><tbody id="plCash"></tbody></table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 7. GHI CHÚ ======================= -->
+<section id="ghichu">
+  <div class="wrap">
+    <div class="mono-lbl sec-no rv-f">07 — ghi chú &amp; cảnh báo</div>
+    <h2 class="rv" style="font-size:clamp(26px,4vw,40px);margin-top:8px">Những chỗ dự toán hay vỡ</h2>
+    <div class="title-rule" style="margin:14px 0 22px;max-width:120px"></div>
+    <div id="notes"></div>
+  </div>
+</section>
+
+<!-- ======================= THANH LỆNH ======================= -->
+<div class="bar-sticky" id="barSticky">
+  <div class="wrap bar">
+    <button class="btn solid btn-print" id="btnPdf">
+      <span class="ico">⎙</span>&nbsp; Lưu PDF <span class="arrow">→</span>
+    </button>
+    <button class="btn" id="btnSave">Lưu vào máy</button>
+    <button class="btn ghost" id="btnLink">Tạo link chia sẻ</button>
+    <button class="btn ghost" id="btnExport">Xuất tệp JSON</button>
+    <button class="btn ghost" id="btnImport">Nhập tệp JSON</button>
+    <button class="btn ghost" id="btnReset">Về số gốc</button>
+    <span class="tiny muted" id="saveState" style="margin-left:auto"><span class="dot"></span>&nbsp; đang tính trực tiếp</span>
+    <input type="file" id="fileIn" accept="application/json,.json" hidden>
+  </div>
+</div>
+
+<!-- ======================= CHÂN TRANG ======================= -->
+<footer class="dark">
+  <div class="wrap">
+    <div class="foot-row">
+      <div>Bảng tính mở xưởng rang — số liệu ước tính thị trường Việt Nam, <span id="footDate">11/2026</span>.</div>
+      <div>Không phải báo giá. Giá thiết bị thực tế phải lấy từ nhà cung cấp.</div>
+    </div>
+    <p class="tiny muted" style="margin-top:22px;max-width:80ch">Mỗi người sửa số trên máy của mình; bấm <b>Lưu vào máy</b>
+      để giữ lại, <b>Tạo link chia sẻ</b> để gửi đúng bộ số mình vừa nhập cho người khác. Trang tĩnh, không có máy chủ,
+      không thu thập gì.</p>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="assets/data.js?v=1"></script>
+<script src="assets/chart.js?v=1"></script>
+<script src="assets/app.js?v=1"></script>
+</body>
+</html>
