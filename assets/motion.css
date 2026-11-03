@@ -88,33 +88,37 @@
 
 /* ============ GẮN HIỆU ỨNG ============ */
 
-/* 01–05 · hiện dần khi cuộn tới (JS gắn .in) */
-.rv { opacity: 0; }
+/* 01–05 · hiện dần khi cuộn tới (JS gắn .in)
+   ⛔ LUẬT: mọi chỗ ẩn nội dung để chờ hiệu ứng PHẢI đứng sau "html.js".
+   Không có JS (hoặc JS lỗi) là trang vẫn phải đọc được, không được trắng bóc. */
+html.js .rv { opacity: 0; }
 .rv.in { animation: a01-fade-up var(--t-slow) var(--ease) both; }
-.rv-f { opacity: 0; }
+html.js .rv-f { opacity: 0; }
 .rv-f.in { animation: a02-fade-in var(--t-slow) var(--ease) both; }
-.rv-l { opacity: 0; }
+html.js .rv-l { opacity: 0; }
 .rv-l.in { animation: a03-slide-left var(--t-slow) var(--ease) both; }
-.rv-r { opacity: 0; }
+html.js .rv-r { opacity: 0; }
 .rv-r.in { animation: a04-slide-right var(--t-slow) var(--ease) both; }
-.rv-clip { opacity: 0; }
+html.js .rv-clip { opacity: 0; }
 .rv-clip.in { opacity: 1; animation: a05-clip-up 700ms var(--ease) both; }
 .rv.d1.in, .rv-l.d1.in, .rv-r.d1.in, .rv-f.d1.in { animation-delay: 80ms; }
 .rv.d2.in, .rv-l.d2.in, .rv-r.d2.in, .rv-f.d2.in { animation-delay: 160ms; }
 .rv.d3.in, .rv-l.d3.in, .rv-r.d3.in, .rv-f.d3.in { animation-delay: 240ms; }
 
 /* 06–07 · nét kẻ tự vẽ */
-.hr { height: 1px; background: var(--rule-hard); transform: scaleX(0); transform-origin: left; }
+.hr { height: 1px; background: var(--rule-hard); transform-origin: left; }
+html.js .hr { transform: scaleX(0); }
 .hr.in { animation: a06-rule-x 620ms var(--ease) both; }
-.vr { width: 1px; background: var(--rule-hard); transform: scaleY(0); transform-origin: top; }
+.vr { width: 1px; background: var(--rule-hard); transform-origin: top; }
+html.js .vr { transform: scaleY(0); }
 .vr.in { animation: a07-rule-y 520ms var(--ease) both; }
 
 /* 08–09 · chữ tách từng ký tự / từng từ */
 .m-split { opacity: 1 !important; }
-.m-split .ch { display: inline-block; opacity: 0; }
+html.js .m-split .ch { display: inline-block; opacity: 0; }
 .m-split.in .ch { animation: a08-letter 460ms var(--ease) both; }
 .m-word { display: inline-block; overflow: hidden; vertical-align: bottom; }
-.m-word > i { display: inline-block; font-style: normal; transform: translateY(105%); }
+html.js .m-word > i { display: inline-block; font-style: normal; transform: translateY(105%); }
 .m-word.in > i { animation: a09-word-mask 680ms var(--ease) both; }
 
 /* 10 · chữ phụ nét mờ */
@@ -199,11 +203,13 @@ a:hover .arrow, .btn:hover .arrow { animation: a30-arrow 300ms var(--ease) both;
 .chart-box .scan { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); opacity: 0; }
 .chart-box.in .scan { animation: a35-scan 1.1s var(--ease) both; }
 .chart-box.in .g-grid { animation: a36-grid-in 600ms var(--ease) both; }
-.chart-box .c-line { stroke-dasharray: var(--len, 2000); stroke-dashoffset: var(--len, 2000); }
+html.js .chart-box:not(.in) .c-line { stroke-dasharray: var(--len, 2000); stroke-dashoffset: var(--len, 2000); }
 .chart-box.in .c-line { animation: a37-line-draw 1.5s var(--ease) 180ms both; }
-.chart-box .c-area { transform-box: fill-box; transform-origin: top; transform: scaleY(0); }
+.chart-box .c-area { transform-box: fill-box; transform-origin: top; }
+html.js .chart-box:not(.in) .c-area { transform: scaleY(0); }
 .chart-box.in .c-area { animation: a38-area-grow 900ms var(--ease) 320ms both; }
-.chart-box .c-mark { transform-box: fill-box; transform-origin: center; transform: scale(0); }
+.chart-box .c-mark { transform-box: fill-box; transform-origin: center; }
+html.js .chart-box:not(.in) .c-mark { transform: scale(0); }
 .chart-box.in .c-mark { animation: a39-marker-pop 520ms var(--ease) 1.3s both; }
 .tip.show { animation: a40-tip-in 160ms var(--ease) both; opacity: 1; }
 .chart-box .c-tick { transform-origin: center top; }
@@ -213,7 +219,8 @@ a:hover .arrow, .btn:hover .arrow { animation: a30-arrow 300ms var(--ease) both;
 .share { display: grid; grid-template-columns: 1fr; gap: 10px; }
 .share-row { display: grid; grid-template-columns: minmax(130px, 34%) 1fr auto; gap: 10px; align-items: center; font-size: 15px; font-weight: 600; }
 .share-track { height: 20px; border: 1px solid var(--rule-hard); position: relative; overflow: hidden; }
-.share-fill { position: absolute; inset: 0 auto 0 0; background: var(--ink); transform-origin: left; transform: scaleX(0); }
+.share-fill { position: absolute; inset: 0 auto 0 0; background: var(--ink); transform-origin: left; }
+html.js .share-row:not(.in) .share-fill { transform: scaleX(0); }
 .share-row.in .share-fill { animation: a42-bar-grow 820ms var(--ease) both; }
 .share-row:hover .share-fill {
   background-image: repeating-linear-gradient(135deg, #000 0 6px, #2a2a2a 6px 12px);
@@ -249,7 +256,7 @@ details .dt-body.closing { animation: a51-close 160ms linear both; }
 input.inp.bad { animation: a52-shake 380ms var(--ease) both; outline: 3px solid var(--amber); }
 
 /* 53 · dấu tích khi lưu */
-.ok-check path { stroke-dasharray: 40; stroke-dashoffset: 40; }
+html.js .ok-check:not(.in) path { stroke-dasharray: 40; stroke-dashoffset: 40; }
 .ok-check.in path { animation: a53-check 460ms var(--ease) both; }
 
 /* 54 · gạch chân tiêu đề mục ghi chú khi rê chuột */
@@ -267,7 +274,8 @@ details summary:hover span::after { animation: a54-underline 260ms var(--ease) b
 tr.rail.in { animation: a57-rail 420ms var(--ease) both; }
 
 /* 58 · đường kẻ dưới tiêu đề mục */
-.title-rule { height: 2px; background: var(--ink); transform: scaleX(0); }
+.title-rule { height: 2px; background: var(--ink); }
+html.js .title-rule { transform: scaleX(0); }
 .title-rule.in { animation: a58-sweep-line 700ms var(--ease) both; }
 
 /* 59 · sơ đồ SVG hiện ra */

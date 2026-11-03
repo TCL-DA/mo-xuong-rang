@@ -298,7 +298,18 @@ footer.dark { padding-top: var(--gap-3); padding-bottom: var(--gap-3); }
   #saveState { display: none; }
 }
 
+/* Máy tắt hiệu ứng (Windows: tắt hoạt ảnh) — tắt chuyển động NHƯNG phải
+   ép hiện mọi thứ, vì nội dung vốn chờ hiệu ứng mới lộ ra.
+   ⛔ Quên khối này là cả trang trắng bóc trên máy đó. */
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition-duration: 1ms !important; }
   html { scroll-behavior: auto; }
+  html.js .rv, html.js .rv-f, html.js .rv-l, html.js .rv-r, html.js .rv-clip,
+  html.js .m-split .ch { opacity: 1 !important; }
+  html.js .rv-clip { clip-path: none !important; }
+  html.js .m-word > i, html.js .hr, html.js .vr, html.js .title-rule,
+  html.js .share-row .share-fill, html.js .chart-box .c-area,
+  html.js .chart-box .c-mark, html.js .be-track .be-fill { transform: none !important; }
+  html.js .chart-box .c-line, html.js .ok-check path { stroke-dashoffset: 0 !important; }
+  .steam { display: none; }   /* khói đứng yên trông như que thẳng */
 }

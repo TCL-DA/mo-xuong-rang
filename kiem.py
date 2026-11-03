@@ -121,6 +121,27 @@ def main():
         mb.locator('#ketqua').scroll_into_view_if_needed(); mb.wait_for_timeout(900)
         mb.screenshot(path=str(OUT / 'dien-thoai-ketqua.png'))
 
+        # ---------- máy tắt hiệu ứng (Windows tắt hoạt ảnh) ----------
+        # Bẫy đã dính 03/11: animation bị tắt mà nội dung lại chờ animation
+        # mới hiện -> cả trang trắng bóc. Lượt này phải thấy chữ.
+        rm = br.new_page(viewport={'width': 1440, 'height': 1000}, reduced_motion='reduce')
+        rm.goto(URL); rm.wait_for_timeout(1800)
+        an = rm.evaluate("""() => {
+          const bad = [];
+          document.querySelectorAll('h1,h2,.kpi .k-val,#capexBox .rv-f,.tbl tbody tr,.hero-sub')
+            .forEach(n => { const c = getComputedStyle(n);
+              if (+c.opacity < .9 || /matrix\(1, 0, 0, 1, 0, [1-9]/.test(c.transform))
+                bad.push((n.tagName + '.' + n.className).slice(0, 40) + ' op=' + c.opacity); });
+          return { an: bad.slice(0, 6),
+                   chu: document.body.innerText.replace(/\s+/g, ' ').length };
+        }""")
+        if an['an']:
+            loi.append('Máy tắt hiệu ứng: còn phần tử bị ẩn — ' + '; '.join(an['an']))
+        if an['chu'] < 3000:
+            loi.append(f"Máy tắt hiệu ứng: trang chỉ còn {an['chu']} ký tự, nghi trắng trang")
+        rm.screenshot(path=str(OUT / 'tat-hieu-ung.png'))
+        rm.close()
+
         # ---------- bản in ----------
         pr = br.new_page()
         pr.goto(URL); pr.wait_for_timeout(1200)

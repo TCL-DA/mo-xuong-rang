@@ -8,6 +8,11 @@
   'use strict';
 
   const KEY = 'mo-xuong-rang/v1';
+
+  // Có JS mới được phép ẩn nội dung chờ hiệu ứng (xem motion.css)
+  document.documentElement.classList.add('js');
+  // Máy tắt hiệu ứng thì không chờ cuộn: hiện thẳng
+  const ITHIEN = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const $ = s => document.querySelector(s);
   const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h != null) n.innerHTML = h; return n; };
 
@@ -370,7 +375,7 @@
       const w = Math.min(100, Math.abs(v) / dt * 100);
       row.innerHTML = `<div>${name}</div><div class="share-track"><div class="share-fill" style="width:${w.toFixed(1)}%"></div></div><div class="num">${pct(v / dt * 100)}</div>`;
       sb.appendChild(row);
-      io.observe(row);
+      if (ITHIEN) row.classList.add('in'); else io.observe(row);
     });
 
     // --- tổng vốn ---
@@ -498,9 +503,24 @@
     es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
   }, { threshold: .12, rootMargin: '0px 0px -8% 0px' });
 
+  const CHON_HIEU_UNG = '.rv,.rv-f,.rv-l,.rv-r,.rv-clip,.hr,.vr,.title-rule,.sec-rule,.kpi,'
+    + '.sec-no,.m-word,.m-split,.svg-fig,.be-track,tr.rail,.chart-box,.flag,.ok-check,.share-row';
+
   function quetHieuUng(root) {
-    (root || document).querySelectorAll('.rv,.rv-f,.rv-l,.rv-r,.rv-clip,.hr,.vr,.title-rule,.sec-rule,.kpi,.sec-no,.m-word,.m-split,.svg-fig,.be-track,tr.rail,.chart-box,.flag,.ok-check')
-      .forEach(n => { if (!n.classList.contains('in')) io.observe(n); });
+    (root || document).querySelectorAll(CHON_HIEU_UNG).forEach(n => {
+      if (n.classList.contains('in')) return;
+      if (ITHIEN) n.classList.add('in');   // tắt hiệu ứng: hiện ngay
+      else io.observe(n);
+    });
+  }
+
+  // Lưới an toàn: sau 1,2 giây mà KHÔNG có lấy một phần tử nào hiện ra thì
+  // coi như bộ theo dõi cuộn hỏng — hiện hết. Thà mất hiệu ứng còn hơn trang trắng.
+  function luoiAnToan() {
+    setTimeout(() => {
+      if (document.querySelector('.in')) return;
+      document.querySelectorAll(CHON_HIEU_UNG).forEach(n => n.classList.add('in'));
+    }, 1200);
   }
 
   function tachChu(node) {
@@ -732,6 +752,7 @@
     tachChu(document.querySelector('#tong h2'));
     quetHieuUng();
     document.addEventListener('input', onInput);
+    luoiAnToan();
     if (location.hash.includes('d=')) toast('Đang xem bộ số từ link chia sẻ. Bấm "Về số gốc" để bỏ.');
   });
 })();
