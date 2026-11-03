@@ -405,7 +405,7 @@
   }
 
   function thangNam(m) {
-    if (m == null) return 'không hoàn được';
+    if (m == null) return 'trên 10 năm';
     if (m < 12) return m + ' tháng';
     const y = Math.floor(m / 12), r = m % 12;
     return y + ' năm' + (r ? ' ' + r + ' tháng' : '');
@@ -612,7 +612,9 @@
       ? `Đường đi xuống trước, chạm đáy rồi leo lên và cắt vạch 0 ở tháng ${R.beMonth} — đó là lúc lấy lại đủ vốn. Rê chuột (hoặc chạm) lên biểu đồ để xem từng tháng.`
       : R.beMonth
         ? `Trong 24 tháng đầu đường chưa chạm vạch 0: theo nhịp đang nhập thì tới tháng ${R.beMonth} mới lấy lại đủ vốn. Rê chuột (hoặc chạm) lên biểu đồ để xem từng tháng.`
-        : 'Đường đi xuống mãi — với bộ số đang nhập thì vốn không quay lại. Phải sửa giá bán, sản lượng hoặc chi phí.';
+        : R.laiTienMat > 0
+          ? 'Mỗi tháng vẫn có lãi nhưng quá mỏng: dò tới 10 năm chưa lấy lại đủ vốn. Phải đẩy sản lượng hoặc giá bán.'
+          : 'Đường đi xuống mãi — với bộ số đang nhập thì vốn không quay lại. Phải sửa giá bán, sản lượng hoặc chi phí.';
 
     const cb = document.getElementById('chartBox');
     if (veLaiHieuUng) { cb.classList.remove('in'); void cb.offsetWidth; cb.classList.add('in'); veLaiHieuUng = false; }
