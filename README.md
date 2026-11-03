@@ -4,7 +4,7 @@
 
 Bảng tính một trang cho người đang định mở **xưởng rang cà phê máy 6 kg** kèm **quán cóc bán mang đi
 5 chỗ ngồi**, mặt bằng 60 m². Trang tự tính vốn đầu tư, chi phí hàng tháng, giá vốn 1 kg cà phê rang
-và 1 ly, điểm hoà vốn, thời gian hoàn vốn, và dòng tiền 24 tháng.
+và 1 ly, **thuế** (hộ kinh doanh hoặc doanh nghiệp), điểm hoà vốn, thời gian hoàn vốn, và dòng tiền 24 tháng.
 
 Mọi con số trên trang **sửa được trực tiếp** — bấm vào ô là gõ số của mình. Không có máy chủ,
 không thu thập gì; số sửa xong nằm trên máy người xem.
@@ -24,6 +24,11 @@ không thu thập gì; số sửa xong nằm trên máy người xem.
 Ước tính thị trường Việt Nam tháng 11/2026, **không phải báo giá**. Ba món thiết bị chính
 (máy rang 6 kg, hệ tự động, máy tách đá) lấy theo mức người dùng đưa vào; phần còn lại là mức
 thường gặp. Giá thật phải lấy từ nhà cung cấp.
+
+Mục 06 tính thuế theo hai hình thức: **hộ kinh doanh** (phần trăm doanh thu, ngưỡng miễn 1 tỷ đồng/năm theo
+Nghị định 141/2026/NĐ-CP sửa Nghị định 68/2026/NĐ-CP) hoặc **doanh nghiệp** (VAT đầu ra 8% theo Nghị quyết
+204/2025/QH15 trừ VAT đầu vào, cộng thuế TNDN 20%). Tra ngày 03/11/2026 — chính sách thuế đổi liên tục,
+phải đối chiếu văn bản gốc trước khi dùng để quyết định.
 
 Mục *"Ghi chú & cảnh báo"* cuối trang liệt kê những khoản hay làm vỡ dự toán (sửa mặt bằng, ống khói
 và PCCC, điện ba pha, hao hụt rang, đọng vốn cà phê xanh) và những gì bảng **chưa** tính

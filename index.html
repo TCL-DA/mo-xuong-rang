@@ -27,6 +27,7 @@
       <a href="#thang">chi phí tháng</a>
       <a href="#giavon">giá vốn</a>
       <a href="#doanhthu">doanh thu</a>
+      <a href="#thue">thuế</a>
       <a href="#ketqua">kết quả</a>
       <a href="#ghichu">ghi chú</a>
     </nav>
@@ -229,10 +230,38 @@
   </div>
 </section>
 
-<!-- ======================= 6. KẾT QUẢ ======================= -->
+<!-- ======================= 6. THUẾ ======================= -->
+<section id="thue">
+  <div class="wrap">
+    <div class="mono-lbl sec-no rv-f">06 — thuế</div>
+    <h2 class="rv" style="font-size:clamp(26px,4vw,40px);margin-top:8px">Nộp thuế kiểu nào</h2>
+    <div class="title-rule" style="margin:14px 0 22px;max-width:120px"></div>
+    <p class="muted rv-f d1">Hộ kinh doanh nộp thuế theo <b>phần trăm doanh thu</b> (đã gộp cả GTGT và thuế thu nhập),
+      không được khấu trừ VAT đầu vào. Doanh nghiệp nộp <b>VAT đầu ra trừ VAT đầu vào</b>, cộng thuế thu nhập doanh nghiệp
+      trên lãi. Chọn đúng hình thức mình định làm.</p>
+
+    <div class="chips" id="chipsThue" style="margin:22px 0">
+      <button class="chip on" data-ht="ho">Hộ kinh doanh</button>
+      <button class="chip" data-ht="dn">Doanh nghiệp (VAT khấu trừ)</button>
+    </div>
+
+    <div class="grid-2 wide-right">
+      <div class="rv-l">
+        <div class="fields" id="fThue"></div>
+      </div>
+      <div class="rv-r">
+        <div class="mono-lbl">Thuế một tháng</div>
+        <table class="pl" style="margin-top:12px"><tbody id="plThue"></tbody></table>
+        <div id="thueFlag" style="margin-top:16px"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 7. KẾT QUẢ ======================= -->
 <section id="ketqua">
   <div class="wrap">
-    <div class="mono-lbl sec-no rv-f">06 — kết quả</div>
+    <div class="mono-lbl sec-no rv-f">07 — kết quả</div>
     <h2 class="rv" style="font-size:clamp(26px,4vw,40px);margin-top:8px">Lãi, hoà vốn, hoàn vốn</h2>
     <div class="title-rule" style="margin:14px 0 22px;max-width:120px"></div>
 
@@ -264,10 +293,10 @@
   </div>
 </section>
 
-<!-- ======================= 7. GHI CHÚ ======================= -->
+<!-- ======================= 8. GHI CHÚ ======================= -->
 <section id="ghichu">
   <div class="wrap">
-    <div class="mono-lbl sec-no rv-f">07 — ghi chú &amp; cảnh báo</div>
+    <div class="mono-lbl sec-no rv-f">08 — ghi chú &amp; cảnh báo</div>
     <h2 class="rv" style="font-size:clamp(26px,4vw,40px);margin-top:8px">Những chỗ dự toán hay vỡ</h2>
     <div class="title-rule" style="margin:14px 0 22px;max-width:120px"></div>
     <div id="notes"></div>

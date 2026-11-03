@@ -61,7 +61,8 @@
       giaVon: clone(DATA.giaVon),
       giaVonLy: clone(DATA.giaVonLy),
       doanhThu: clone(DATA.doanhThu),
-      giaThiet: clone(DATA.giaThiet)
+      giaThiet: clone(DATA.giaThiet),
+      thue: clone(DATA.thue)
     };
   }
 
@@ -82,10 +83,12 @@
         ? o.capex[i].slice(0, 200).map(locHang).filter(Boolean) : goc);
     }
     if (Array.isArray(o.opex)) b.opex = o.opex.slice(0, 200).map(locHang).filter(Boolean);
-    ['giaVon', 'giaVonLy', 'doanhThu', 'giaThiet'].forEach(k => {
+    if (o.thue && typeof o.thue === 'object' && o.thue.hinhThuc === 'dn') b.thue.hinhThuc = 'dn';
+    ['giaVon', 'giaVonLy', 'doanhThu', 'giaThiet', 'thue'].forEach(k => {
       const src = o[k];
       if (!src || typeof src !== 'object') return;
       Object.keys(b[k]).forEach(f => {
+        if (f === 'hinhThuc') return;   // khoá chữ, đã xử lý ở trên
         if (Object.prototype.hasOwnProperty.call(src, f)) b[k][f] = soSach(src[f], b[k][f]);
       });
     });
@@ -161,18 +164,50 @@
     const bienPhi = vSi + vLe + vLy + vGc;
 
     const laiGop = doanhThu - bienPhi;
-    const laiTienMat = laiGop - coDinh;
     const khauHao = thietBi / Math.max(1, (+t.khauHaoNam || 1) * 12);
+
+    /* ---- thuế ----
+       Trình bày theo DÒNG TIỀN cho dễ hiểu: tiền khách trả − tiền thực chi − thuế nộp.
+       Nên giá vốn ở trên giữ nguyên là số tiền thực trả (đã gồm VAT đầu vào),
+       phần VAT đầu vào được khấu trừ đi vào số VAT phải nộp. */
+    const th = S.thue;
+    const laDN = th.hinhThuc === 'dn';
+    let thueDT = 0, thueLai = 0, vatRa = 0, vatVao = 0, dtThuan = doanhThu;
+    let dtNam = doanhThu * 12, heSoNguong = 1, vuotNguong = true;
+
+    if (laDN) {
+      const tr = (+th.dnVatRa || 0) / 100;
+      dtThuan = th.giaDaGomVat ? doanhThu / (1 + tr) : doanhThu;
+      vatRa = dtThuan * tr;
+      const tv = (+th.dnVatVao || 0) / 100;
+      const chiCoHoaDon = (bienPhi + coDinh) * (+th.dnCoHoaDon || 0) / 100;
+      vatVao = tv > 0 ? chiCoHoaDon * tv / (1 + tv) : 0;
+      thueDT = Math.max(0, vatRa - vatVao);
+      const loiNhuanKT = dtThuan - (bienPhi + coDinh - vatVao) - khauHao;
+      thueLai = Math.max(0, loiNhuanKT) * (+th.dnTndn || 0) / 100;
+    } else {
+      const nguong = +th.nguongMien || 0;
+      vuotNguong = dtNam > nguong;
+      heSoNguong = th.truNguong ? (vuotNguong ? (dtNam - nguong) / dtNam : 0) : (vuotNguong ? 1 : 0);
+      thueDT = ((rSi + rLe) * (+th.hoHangHoa || 0)
+              + rLy * (+th.hoAnUong || 0)
+              + rGc * (+th.hoDichVu || 0)) / 100 * heSoNguong;
+    }
+    const tongThue = thueDT + thueLai;
+
+    const laiTienMat = laiGop - coDinh - tongThue;
     const laiKeToan = laiTienMat - khauHao;
 
-    const tyLeGop = doanhThu > 0 ? laiGop / doanhThu : 0;
+    // hoà vốn: tại điểm hoà vốn thì không có thuế trên lãi, chỉ còn thuế theo doanh thu
+    const tThue = doanhThu > 0 ? thueDT / doanhThu : 0;
+    const tyLeGop = doanhThu > 0 ? (laiGop - thueDT) / doanhThu : 0;
     const dtHoaVon = tyLeGop > 0 ? coDinh / tyLeGop : Infinity;
 
     // kg cần bán để hoà vốn nếu chỉ bán cà phê rang giá sỉ
-    const gopSiKg = (+d.siGia || 0) - giaVonKg;
+    const gopSiKg = (+d.siGia || 0) * (1 - tThue) - giaVonKg;
     const kgHoaVon = gopSiKg > 0 ? coDinh / gopSiKg : Infinity;
     // ly cần bán mỗi ngày để hoà vốn nếu chỉ bán tại quầy
-    const gopLy = (+d.lyGia || 0) - giaVonLy;
+    const gopLy = (+d.lyGia || 0) * (1 - tThue) - giaVonLy;
     const lyHoaVon = gopLy > 0 && +d.ngayMo ? coDinh / gopLy / (+d.ngayMo) : Infinity;
 
     // dòng tiền, có nhịp chạy dần: biểu đồ vẽ 24 tháng, mốc hoàn vốn dò tới 120 tháng
@@ -181,7 +216,8 @@
     let cum = -(capexGoc + duPhong), beMonth = null;
     for (let m = 1; m <= 120; m++) {
       const cs = m <= 3 ? f[0] : m <= 6 ? f[1] : f[2];
-      cum += doanhThu * cs - bienPhi * cs - coDinh;
+      const lai0 = (doanhThu - bienPhi) * cs - coDinh;
+      cum += lai0 - thueDT * cs - (lai0 > 0 ? thueLai * cs : 0);
       if (m <= 24) series.push({ thang: m, tien: cum });
       if (beMonth === null && cum >= 0) beMonth = m;
     }
@@ -191,6 +227,7 @@
       coDinh, giaVonKg, giaVonLy, cXanh, cGas, cDien, cKhac, kgLoi, xanhCan, lyCaPhe,
       doanhThu, rSi, rLe, rLy, rGc, siKg, leKg, soLy, gcKg,
       bienPhi, vSi, vLe, vLy, vGc, laiGop, laiTienMat, khauHao, laiKeToan,
+      laDN, thueDT, thueLai, tongThue, vatRa, vatVao, dtThuan, dtNam, vuotNguong, heSoNguong,
       tyLeGop, dtHoaVon, kgHoaVon, lyHoaVon, series, beMonth
     };
   }
@@ -313,6 +350,58 @@
     return y + ' năm' + (r ? ' ' + r + ' tháng' : '');
   }
 
+  /* Mục 06 — thuế. Ô nhập đổi theo hình thức đang chọn, bảng bên phải là tiền thuế một tháng. */
+  function veMucThue() {
+    const th = S.thue, laDN = th.hinhThuc === 'dn';
+
+    document.querySelectorAll('#chipsThue .chip').forEach(c =>
+      c.classList.toggle('on', (c.dataset.ht === 'dn') === laDN));
+
+    const f = document.getElementById('fThue');
+    f.innerHTML = '';
+    f.appendChild(fieldsFor(th, 'thue', laDN
+      ? ['dnVatRa', 'dnVatVao', 'dnCoHoaDon', 'dnTndn', 'giaDaGomVat']
+      : ['nguongMien', 'truNguong', 'hoHangHoa', 'hoAnUong', 'hoDichVu']));
+
+    plRows(document.getElementById('plThue'), laDN ? [
+      ['Doanh thu chưa VAT', money(R.dtThuan), 'sub'],
+      ['VAT đầu ra ' + nf2.format(th.dnVatRa) + '%', money(R.vatRa), 'sub'],
+      ['VAT đầu vào được khấu trừ', '− ' + money(R.vatVao), 'sub'],
+      '-',
+      ['VAT phải nộp', money(R.thueDT) + ' đ', 'big'],
+      ['Thuế TNDN ' + nf2.format(th.dnTndn) + '% trên lãi', money(R.thueLai) + ' đ'],
+      ['Tổng thuế một tháng', money(R.tongThue) + ' đ', 'big'],
+      ['Một năm', money(R.tongThue * 12) + ' đ', 'sub']
+    ] : [
+      ['Doanh thu một năm', money(R.dtNam), 'sub'],
+      ['Ngưỡng không phải nộp thuế', money(th.nguongMien), 'sub'],
+      [th.truNguong ? 'Phần doanh thu bị tính thuế' : 'Doanh thu bị tính thuế',
+        money(R.dtNam * R.heSoNguong) + '/năm', 'sub'],
+      '-',
+      ['Cà phê rang · ' + nf2.format(th.hoHangHoa) + '%', money((R.rSi + R.rLe) * th.hoHangHoa / 100 * R.heSoNguong), 'sub'],
+      ['Đồ uống tại quầy · ' + nf2.format(th.hoAnUong) + '%', money(R.rLy * th.hoAnUong / 100 * R.heSoNguong), 'sub'],
+      ['Rang gia công · ' + nf2.format(th.hoDichVu) + '%', money(R.rGc * th.hoDichVu / 100 * R.heSoNguong), 'sub'],
+      '-',
+      ['Thuế một tháng', money(R.tongThue) + ' đ', 'big'],
+      ['Một năm', money(R.tongThue * 12) + ' đ', 'sub']
+    ]);
+
+    const fl = document.getElementById('thueFlag');
+    fl.innerHTML = '';
+    const flag = el('div', 'flag in');
+    if (!laDN && !R.vuotNguong) {
+      flag.textContent = 'Doanh thu năm dưới ngưỡng — hộ kinh doanh không phải nộp GTGT và TNCN.';
+    } else if (!laDN && R.dtNam < (+th.nguongMien || 0) * 1.2) {
+      flag.classList.add('warn');
+      flag.appendChild(el('span', 'tri'));
+      flag.appendChild(el('span', null,
+        'Chỉ vượt ngưỡng ' + big(R.dtNam - (+th.nguongMien || 0)) + '/năm — bán nhỉnh hơn một chút là bước qua mức phải nộp thuế.'));
+    } else {
+      flag.textContent = 'Thuế ăn ' + pct(R.doanhThu ? R.tongThue / R.doanhThu * 100 : 0) + ' doanh thu.';
+    }
+    fl.appendChild(flag);
+  }
+
   function veKetQua() {
     R = tinh();
 
@@ -320,9 +409,9 @@
     setTxt('kVon', big(R.vonPhaiCo));
     document.getElementById('kVonNote').textContent =
       `${big(R.capexGoc)} mua sắm + ${big(R.duPhong)} dự phòng + ${big(R.quy)} quỹ ${S.giaThiet.quyThang} tháng`;
-    setTxt('kThang', big(R.coDinh + R.bienPhi));
+    setTxt('kThang', big(R.coDinh + R.bienPhi + R.tongThue));
     document.getElementById('kThangNote').textContent =
-      `${big(R.coDinh)} cố định + ${big(R.bienPhi)} theo hàng bán`;
+      `${big(R.coDinh)} cố định + ${big(R.bienPhi)} theo hàng bán + ${big(R.tongThue)} thuế`;
     setTxt('kLai', (R.laiTienMat < 0 ? '−' : '') + big(Math.abs(R.laiTienMat)));
     document.getElementById('kLaiNote').textContent =
       R.laiKeToan >= 0 ? `Sau khấu hao vẫn lãi ${big(R.laiKeToan)}` : `Trừ khấu hao ${big(R.khauHao)} thì lỗ ${big(Math.abs(R.laiKeToan))}`;
@@ -417,12 +506,16 @@
       ['Cà phê xanh phải mua', nf.format(Math.ceil((R.siKg + R.leKg + R.soLy * S.giaVonLy.caPheGam / 1000) * R.xanhCan)) + ' kg/tháng']
     ]);
 
+    // --- mục thuế ---
+    veMucThue();
+
     // --- P&L tháng ---
     plRows(document.getElementById('plMonth'), [
       ['Doanh thu', money(R.doanhThu)],
       ['Giá vốn hàng bán', '− ' + money(R.bienPhi), 'sub'],
       ['Lãi gộp (' + pct(R.tyLeGop * 100) + ')', money(R.laiGop)],
       ['Chi phí cố định', '− ' + money(R.coDinh), 'sub'],
+      ['Thuế (' + (R.laDN ? 'VAT + TNDN' : 'hộ kinh doanh') + ')', '− ' + money(R.tongThue), 'sub'],
       '-',
       ['Tiền thật còn lại mỗi tháng', (R.laiTienMat < 0 ? '− ' : '') + money(Math.abs(R.laiTienMat)) + ' đ', 'big'],
       ['Khấu hao thiết bị (' + S.giaThiet.khauHaoNam + ' năm)', '− ' + money(R.khauHao), 'sub'],
@@ -470,12 +563,29 @@
     ['Khói, mùi và hàng xóm', `
       <p>Quán cóc trong khu dân cư, rang vài mẻ liền là có mùi và khói. Hai cách xử lý: rang lệch giờ, hoặc lắp buồng đốt khói —
       khoản này <b>chưa nằm trong bảng</b> vì tuỳ chỗ. Nếu chủ nhà hoặc hàng xóm phản ứng thì đó là chi phí bắt buộc, cộng thêm vào mục 02.</p>`],
+    ['Thuế tính thế nào trong bảng này', `
+      <p><b>Hộ kinh doanh</b> (mặc định): từ 01/01/2026 bỏ thuế khoán, hộ tự kê khai. Ngưỡng doanh thu
+      <b>không phải nộp GTGT và thuế thu nhập là 1 tỷ đồng/năm</b> (Nghị định 141/2026/NĐ-CP sửa Nghị định
+      68/2026/NĐ-CP — trước đó là 500 triệu). Vượt ngưỡng thì nộp theo phần trăm doanh thu theo nhóm ngành:
+      bán hàng hoá 1% GTGT + 0,5% thuế thu nhập; dịch vụ ăn uống 3% + 1,5%; dịch vụ không bao thầu nguyên vật
+      liệu 7%. Hộ kinh doanh <b>không được khấu trừ VAT đầu vào</b> — VAT nằm luôn trong giá mua.</p>
+      <p>Công tắc <i>"Trừ ngưỡng rồi mới tính"</i> trong mục 06: để <b>1</b> là chỉ tính thuế trên phần doanh thu
+      vượt 1 tỷ, để <b>0</b> là tính trên toàn bộ doanh thu. Hai cách cho ra số rất khác nhau khi doanh thu
+      chỉ nhỉnh hơn ngưỡng — hỏi cán bộ thuế quản lý để biết nơi mình áp cách nào.</p>
+      <p><b>Doanh nghiệp</b>: VAT đầu ra trừ VAT đầu vào. Thuế suất 10% đang được giảm còn <b>8% đến hết
+      31/12/2026</b> (Nghị quyết 204/2025/QH15). Chỗ dễ hụt: cà phê xanh mua của nông dân thường
+      <b>không có hoá đơn</b> nên không được khấu trừ — ô <i>"Chi phí có hoá đơn GTGT"</i> để mặc định 60%,
+      sửa theo thực tế mua bán của mình. Thêm thuế thu nhập doanh nghiệp 20% trên lãi.</p>
+      <p>Giá bán nhập ở mục 05 mặc định là <b>giá khách trả, đã gồm VAT</b>. Nếu mình báo giá sỉ chưa gồm VAT
+      thì đặt ô <i>"Giá bán đã gồm VAT"</i> về 0.</p>
+      <p class="tiny muted">Tra ngày 03/11/2026. Chính sách thuế đổi liên tục — trước khi quyết định phải đối
+      chiếu văn bản gốc hoặc hỏi cơ quan thuế quản lý; bảng này không thay tư vấn thuế.</p>`],
     ['Những gì bảng này chưa tính', `
       <ul>
         <li>Lãi vay nếu vay vốn mua máy.</li>
         <li>Thuê mặt bằng tăng sau mỗi kỳ hạn hợp đồng.</li>
         <li>Sửa máy lớn, thay vòng bi, đại tu bếp.</li>
-        <li>Thuế: bảng dùng mức thuế khoán hộ kinh doanh gộp trong dòng "kế toán + thuế"; lên công ty có VAT và thuế thu nhập thì khác.</li>
+        <li>Phí kê khai, phần mềm hoá đơn điện tử, chữ ký số — dòng "kế toán + thuế" ở mục 03 chỉ là tiền thuê dịch vụ kế toán.</li>
         <li>Lương chủ: để 0 nghĩa là chủ đứng quán không lấy lương — nếu phải thuê người thay, cộng vào mục 02.</li>
       </ul>`],
     ['Cách kiểm lại số của riêng mình', `
@@ -483,7 +593,8 @@
         <li>Xin báo giá ba nơi cho từng món trên 10 triệu, điền đúng vào bảng.</li>
         <li>Đi hỏi thuê ba mặt bằng cùng khu, lấy giá và tiền cọc thật.</li>
         <li>Rang gia công hoặc bán thử một tháng trước khi mua máy — để biết thật sự bán được bao nhiêu kg.</li>
-        <li>Đặt kịch bản xấu ở mục 06 rồi xem quỹ sống sót chịu được mấy tháng. Chịu dưới ba tháng là chưa nên mở.</li>
+        <li>Đặt kịch bản xấu ở mục 07 rồi xem quỹ sống sót chịu được mấy tháng. Chịu dưới ba tháng là chưa nên mở.</li>
+        <li>Hỏi cơ quan thuế quản lý xem hộ kinh doanh ở nơi mình tính thuế trên toàn bộ doanh thu hay chỉ phần vượt ngưỡng 1 tỷ — chênh nhau vài chục triệu một năm.</li>
       </ol>`]
   ];
 
@@ -725,6 +836,14 @@
       veNhapLieu();
       document.getElementById('saveState').innerHTML = '<span class="dot"></span>&nbsp; đã về số gốc';
       toast('Đã trả mọi con số về bản gốc.');
+    });
+
+    document.querySelectorAll('#chipsThue .chip').forEach(c => {
+      c.addEventListener('click', () => {
+        S.thue.hinhThuc = c.dataset.ht === 'dn' ? 'dn' : 'ho';
+        veKetQua();
+        quetHieuUng(document.getElementById('thue'));
+      });
     });
 
     document.querySelectorAll('#chips .chip').forEach(c => {

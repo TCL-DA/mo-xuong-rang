@@ -120,7 +120,32 @@ const DATA = {
     giaCongGia: 25000        // đồng/kg tiền công rang
   },
 
-  /* ---------- 6. GIẢ THIẾT TÍNH TOÁN ---------- */
+  /* ---------- 6. THUẾ ----------
+     Tra ngày 03/11/2026. Hộ kinh doanh: bỏ thuế khoán từ 01/01/2026, tự kê khai;
+     ngưỡng doanh thu không phải nộp GTGT và TNCN là 1 tỷ đồng/năm
+     (Nghị định 141/2026/NĐ-CP sửa Nghị định 68/2026/NĐ-CP, trước đó 500 triệu).
+     Tỷ lệ % trên doanh thu theo nhóm ngành (mức quen dùng từ Thông tư 40/2021):
+       · phân phối, cung cấp hàng hoá: GTGT 1% + TNCN 0,5% = 1,5%
+       · dịch vụ ăn uống:              GTGT 3% + TNCN 1,5% = 4,5%
+       · dịch vụ không bao thầu NVL:   GTGT 5% + TNCN 2%   = 7%
+     Doanh nghiệp: GTGT 10% đang được giảm còn 8% đến hết 31/12/2026
+     (Nghị quyết 204/2025/QH15), thuế TNDN 20%.
+     Số nào cũng sửa được — hỏi lại cán bộ thuế quản lý trước khi tin tuyệt đối. */
+  thue: {
+    hinhThuc: 'ho',            // 'ho' = hộ kinh doanh · 'dn' = doanh nghiệp
+    nguongMien: 1000000000,    // đồng/năm, dưới mức này hộ KD không nộp GTGT + TNCN
+    truNguong: 1,              // 1 = trừ ngưỡng rồi mới tính · 0 = tính trên toàn bộ doanh thu
+    hoHangHoa: 1.5,            // % doanh thu — bán cà phê rang
+    hoAnUong: 4.5,             // % doanh thu — đồ uống bán tại quầy
+    hoDichVu: 7,               // % doanh thu — rang gia công
+    dnVatRa: 8,                // % VAT đầu ra
+    dnVatVao: 8,               // % VAT đầu vào bình quân
+    dnCoHoaDon: 60,            // % chi phí đầu vào CÓ hoá đơn GTGT (cà phê xanh mua dân thường không có)
+    dnTndn: 20,                // % thuế thu nhập doanh nghiệp
+    giaDaGomVat: 1             // 1 = giá bán đang nhập là giá khách trả (đã gồm VAT)
+  },
+
+  /* ---------- 7. GIẢ THIẾT TÍNH TOÁN ---------- */
   giaThiet: {
     duPhong: 10,             // % dự phòng trên vốn đầu tư
     quyThang: 3,             // số tháng chi phí cố định giữ làm quỹ sống sót
@@ -158,6 +183,17 @@ const NHAN = {
   lyGia: ['Giá 1 ly', 'đồng/ly'],
   giaCongKg: ['Rang gia công', 'kg/tháng'],
   giaCongGia: ['Tiền công rang', 'đồng/kg'],
+
+  nguongMien: ['Ngưỡng miễn thuế', 'đồng/năm'],
+  truNguong: ['Trừ ngưỡng rồi mới tính', '1 = có, 0 = không'],
+  hoHangHoa: ['Bán cà phê rang', '% doanh thu'],
+  hoAnUong: ['Đồ uống tại quầy', '% doanh thu'],
+  hoDichVu: ['Rang gia công', '% doanh thu'],
+  dnVatRa: ['VAT đầu ra', '%'],
+  dnVatVao: ['VAT đầu vào bình quân', '%'],
+  dnCoHoaDon: ['Chi phí có hoá đơn GTGT', '%'],
+  dnTndn: ['Thuế TNDN', '% trên lãi'],
+  giaDaGomVat: ['Giá bán đã gồm VAT', '1 = rồi, 0 = chưa'],
 
   duPhong: ['Dự phòng vốn đầu tư', '%'],
   quyThang: ['Quỹ sống sót', 'tháng'],
