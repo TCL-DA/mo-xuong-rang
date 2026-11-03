@@ -30,7 +30,7 @@ const DATA = {
         ['Máy tách đá (destoner)', 1, 'bộ', 35000000, 'Giá đang dùng để tính', 8],
         ['Ống khói inox + cút + giá đỡ (~8 m)', 1, 'hệ', 12000000, 'Phải có, nhà thuê hay bị bỏ quên', 8],
         ['Tủ điện + cấp nguồn 3 pha, dây, CB, công lắp', 1, 'hệ', 18000000, 'Máy 6 kg + hệ tự động nên đi 3 pha', 8],
-        ['Bình gas LPG 45 kg + van, đồng hồ, ống mềm', 2, 'bình', 3000000, 'Đổi vỏ 1 lần, sau chỉ mua gas', 8],
+        ['Bình gas LPG 45 kg + van, đồng hồ, ống mềm', 2, 'bình', 3800000, 'Cọc vỏ ~1,5 tr + bình gas đầy ~2,3 tr', 8],
         ['Cân điện tử 30 kg + cân sàn 150 kg', 1, 'bộ', 3500000, '', 8],
         ['Dụng cụ rang (xẻng, sàng, xô, hút bụi vỏ lụa)', 1, 'bộ', 4500000, '', 8],
         ['Máy xay công nghiệp (xay theo đơn)', 1, 'cái', 18000000, '', 8],
@@ -45,7 +45,7 @@ const DATA = {
         ['Máy pha espresso 2 group', 1, 'cái', 70000000, 'Mua mới hãng phổ thông; máy cũ ~35–45 tr', 8],
         ['Máy xay espresso (xay theo ly)', 1, 'cái', 15000000, '', 8],
         ['Quầy bar inox + mặt đá + chậu rửa 2 hố', 1, 'bộ', 25000000, '', 8],
-        ['Tủ mát 2 cánh + tủ đông nhỏ', 1, 'bộ', 16000000, '', 8],
+        ['Tủ mát 2 cánh + tủ đông nhỏ', 1, 'bộ', 18000000, 'Tủ mát 2 cánh 13–18 tr + tủ đông nhỏ 5–7 tr', 8],
         ['Máy làm đá viên 50 kg/ngày', 1, 'cái', 12000000, 'Mua đá ngoài thì để 0', 8],
         ['Lọc nước RO cho máy pha', 1, 'bộ', 8000000, 'Bỏ qua là hỏng máy pha', 8],
         ['Dụng cụ bar + ly + bình ủ + đồ pha thủ công', 1, 'bộ', 8000000, '', 8],
@@ -64,8 +64,8 @@ const DATA = {
       rows: [
         ['Cọc thuê mặt bằng', 2, 'tháng', 10000000, 'Chủ nhà thường lấy 2–3 tháng', 0],
         ['Tiền thuê trả trước tháng đầu', 1, 'tháng', 10000000, '', 0],
-        ['Giấy phép: ĐKKD, an toàn thực phẩm, PCCC, biển hiệu', 1, 'gói', 8000000, '', 0],
-        ['Cà phê xanh lô đầu', 300, 'kg', 95000, 'Trộn robusta + arabica', 0],
+        ['Giấy phép: ĐKKD, an toàn thực phẩm, PCCC, biển hiệu', 1, 'gói', 6000000, 'Lệ phí nhà nước thấp, phần lớn là tiền thuê làm hồ sơ', 0],
+        ['Cà phê xanh lô đầu', 300, 'kg', 105000, 'Nhân xô ~90 k (10/2026); sàng 16/18 100–115 k; arabica 150 k+', 0],
         ['Bao bì + tem nhãn + thùng carton lô đầu', 1, 'gói', 12000000, '', 8],
         ['Nguyên liệu quán lô đầu (sữa, đường, syrup, trà, ly, ống hút)', 1, 'gói', 10000000, '', 8],
         ['Khai trương + marketing ban đầu (ảnh, poster, voucher, ads)', 1, 'gói', 15000000, '', 8],
@@ -77,31 +77,39 @@ const DATA = {
   /* ---------- 2. CHI PHÍ CỐ ĐỊNH HÀNG THÁNG ---------- */
   opex: [
     ['Thuê mặt bằng 60 m²', 1, 'tháng', 10000000, 'Giá đang dùng để tính', 0],
-    ['Lương bán hàng toàn thời gian', 1, 'người', 7500000, '', 0],
-    ['Lương bán hàng bán thời gian (4 h/ngày)', 1, 'người', 4500000, '', 0],
+    ['Lương bán hàng toàn thời gian', 1, 'người', 8000000, 'Pha chế toàn thời gian TP.HCM; tối thiểu vùng I 2026 là 5,31 tr', 0],
+    ['Lương bán hàng bán thời gian (4 h/ngày)', 1, 'người', 3000000, '~27 k/giờ × 4 h × 26 ngày', 0],
     ['BHXH + phụ cấp + cơm trưa', 1, 'gói', 2000000, '', 0],
-    ['Điện quán (tủ mát, máy pha, đèn, quạt)', 1, 'tháng', 3500000, 'Điện rang tính riêng theo kg', 8],
+    ['Điện quán (tủ mát, máy pha, đèn, quạt)', 1, 'tháng', 3500000, '~1.100 kWh; điện rang tính riêng theo kg', 8],
     ['Nước', 1, 'tháng', 600000, '', 5],
     ['Internet + POS + điện thoại', 1, 'tháng', 700000, '', 10],
     ['Rác + vệ sinh', 1, 'tháng', 300000, '', 0],
     ['Marketing thường xuyên (ads, quà, mẫu thử)', 1, 'tháng', 3000000, '', 8],
     ['Bảo trì máy + vật tư thay thế', 1, 'tháng', 1500000, 'Gasket, lưới, dầu mỡ, hiệu chuẩn', 8],
-    ['Kế toán + thuế khoán', 1, 'tháng', 1500000, '', 8],
+    ['Dịch vụ kế toán + hoá đơn điện tử + chữ ký số', 1, 'tháng', 1500000, 'Bỏ thuế khoán từ 2026 nên phải kê khai, không né được', 8],
     ['Lương chủ tự trả cho mình', 1, 'tháng', 0, 'Để 0 nếu chủ tự đứng quán', 0]
   ],
 
   /* ---------- 3. GIÁ VỐN 1 KG CÀ PHÊ RANG ---------- */
   giaVon: {
-    giaXanh: 95000,          // đồng/kg cà phê xanh
+    giaXanh: 105000,         // đồng/kg cà phê xanh (nhân xô 10/2026 ~90 k, hạt sàng chọn cao hơn)
     haoHut: 16,              // % khối lượng mất khi rang
-    gasGia: 32000,           // đồng/kg LPG
+    gasGia: 51000,           // đồng/kg LPG (bình 45 kg ~2,3 tr, giá tháng 10/2026)
     gasTieuThu: 0.11,        // kg LPG cho 1 kg cà phê rang
     dienRang: 0.25,          // kWh cho 1 kg rang (motor, quạt, hệ tự động)
-    dienGia: 3200,           // đồng/kWh (giá kinh doanh)
+    dienGia: 3200,           // đồng/kWh (kinh doanh, bình quân giờ thường và cao điểm)
     baoBi: 7000,             // đồng/kg (túi 500 g có van ×2)
     temNhan: 2000,           // đồng/kg
     congRang: 2800,          // đồng/kg (công người đứng máy)
-    hongBo: 1.5              // % mẻ lỗi phải bỏ
+    hongBo: 1.5,             // % mẻ lỗi phải bỏ
+    // VAT đầu vào của từng khoản (%) — cà phê xanh mua của nông dân không có hoá đơn,
+    // công đứng máy là lương nên cũng không có VAT
+    vatXanh: 0,
+    vatGas: 8,
+    vatDienRang: 8,
+    vatBaoBi: 8,
+    vatTem: 8,
+    vatCong: 0
   },
 
   /* ---------- 4. GIÁ VỐN 1 LY TAKE AWAY ---------- */
@@ -109,7 +117,10 @@ const DATA = {
     caPheGam: 16,            // g cà phê rang cho 1 ly
     suaDuongSyrup: 3500,     // đồng/ly
     lyNapOngHut: 1800,       // đồng/ly
-    daNuoc: 300              // đồng/ly
+    daNuoc: 300,             // đồng/ly
+    vatSua: 8,               // VAT % của sữa, đường, syrup
+    vatLy: 8,                // VAT % của ly, nắp, ống hút
+    vatDa: 8                 // VAT % của đá, nước
   },
 
   /* ---------- 5. DOANH THU ---------- */
@@ -149,7 +160,7 @@ const DATA = {
     giaDaGomVat: 1,            // 1 = GIÁ BÁN đang nhập là giá khách trả (đã gồm VAT)
     muaCapexGomVat: 0,         // 0 = đơn giá ở bảng VỐN là giá chưa VAT (báo giá thiết bị thường vậy)
     muaOpexGomVat: 1,          // 1 = chi phí hàng tháng đang nhập là số tiền thực trả (đã gồm VAT)
-    nlCoHoaDon: 40             // % nguyên liệu/bao bì trong giá vốn CÓ hoá đơn GTGT
+    nlCoHoaDon: 40             // (không dùng nữa — VAT nguyên liệu nay khai theo từng khoản ở mục 04)
   },
 
   /* ---------- 7. GIẢ THIẾT TÍNH TOÁN ---------- */
@@ -175,11 +186,20 @@ const NHAN = {
   temNhan: ['Tem nhãn', 'đồng/kg'],
   congRang: ['Công đứng máy', 'đồng/kg'],
   hongBo: ['Mẻ lỗi phải bỏ', '%'],
+  vatXanh: ['VAT cà phê xanh', '%'],
+  vatGas: ['VAT gas', '%'],
+  vatDienRang: ['VAT điện rang', '%'],
+  vatBaoBi: ['VAT bao bì', '%'],
+  vatTem: ['VAT tem nhãn', '%'],
+  vatCong: ['VAT công đứng máy', '%'],
 
   caPheGam: ['Cà phê cho 1 ly', 'gam'],
   suaDuongSyrup: ['Sữa, đường, syrup', 'đồng/ly'],
   lyNapOngHut: ['Ly, nắp, ống hút', 'đồng/ly'],
   daNuoc: ['Đá, nước', 'đồng/ly'],
+  vatSua: ['VAT sữa, đường, syrup', '%'],
+  vatLy: ['VAT ly, nắp, ống hút', '%'],
+  vatDa: ['VAT đá, nước', '%'],
 
   siKg: ['Bán sỉ cho quán', 'kg/tháng'],
   siGia: ['Giá sỉ', 'đồng/kg'],
@@ -202,7 +222,7 @@ const NHAN = {
   giaDaGomVat: ['Giá bán đã gồm VAT', '1 = rồi, 0 = chưa'],
   muaCapexGomVat: ['Đơn giá bảng vốn đã gồm VAT', '1 = rồi, 0 = chưa'],
   muaOpexGomVat: ['Chi phí tháng đã gồm VAT', '1 = rồi, 0 = chưa'],
-  nlCoHoaDon: ['Nguyên liệu có hoá đơn GTGT', '%'],
+
 
   duPhong: ['Dự phòng vốn đầu tư', '%'],
   quyThang: ['Quỹ sống sót', 'tháng'],

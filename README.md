@@ -22,8 +22,10 @@ không thu thập gì; số sửa xong nằm trên máy người xem.
 ## Số mặc định
 
 Ước tính thị trường Việt Nam tháng 11/2026, **không phải báo giá**. Ba món thiết bị chính
-(máy rang 6 kg, hệ tự động, máy tách đá) lấy theo mức người dùng đưa vào; phần còn lại là mức
-thường gặp. Giá thật phải lấy từ nhà cung cấp.
+(máy rang 6 kg, hệ tự động, máy tách đá) lấy theo mức người dùng đưa vào; phần còn lại rà theo
+giá thị trường tra ngày 03/11/2026: cà phê nhân xô robusta 89–93 k/kg (bảng để 105 k vì hạt sàng chọn),
+gas LPG bình 45 kg ~2,3 triệu → 51 k/kg, điện kinh doanh bình quân 3.200 đ/kWh, lương tối thiểu vùng I
+5,31 triệu (Nghị định 293/2025/NĐ-CP). Giá thật vẫn phải lấy từ nhà cung cấp.
 
 Mỗi dòng trong bảng vốn đầu tư và bảng chi phí tháng có **cột VAT riêng** (8% cho hàng hoá đang được giảm,
 10% viễn thông, 5% nước sạch, 0 cho khoản không có hoá đơn như thuê nhà của cá nhân, lương, lệ phí,

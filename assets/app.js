@@ -167,9 +167,21 @@
     const kgLoi = kgThuan * (+g.hongBo || 0) / 100;
     const giaVonKg = kgThuan + kgLoi;
 
+    // VAT nằm sẵn trong giá nguyên liệu (giá nhập là tiền thực trả).
+    // Doanh nghiệp khấu trừ được phần này, hộ kinh doanh thì không.
+    const vOf = (tien, v) => { const x = (+v || 0) / 100; return x > 0 ? tien * x / (1 + x) : 0; };
+    const heSoLoi = 1 + (+g.hongBo || 0) / 100;
+    const vatKg = (vOf(cXanh, g.vatXanh) + vOf(cGas, g.vatGas) + vOf(cDien, g.vatDienRang)
+                 + vOf(+g.baoBi || 0, g.vatBaoBi) + vOf(+g.temNhan || 0, g.vatTem)
+                 + vOf(+g.congRang || 0, g.vatCong)) * heSoLoi;
+    const vatGiaCongKg = (vOf(cGas, g.vatGas) + vOf(cDien, g.vatDienRang)
+                        + vOf(+g.congRang || 0, g.vatCong)) * heSoLoi;
+
     // giá vốn 1 ly
     const lyCaPhe = (+l.caPheGam || 0) / 1000 * giaVonKg;
     const giaVonLy = lyCaPhe + (+l.suaDuongSyrup || 0) + (+l.lyNapOngHut || 0) + (+l.daNuoc || 0);
+    const vatLyDv = (+l.caPheGam || 0) / 1000 * vatKg
+      + vOf(+l.suaDuongSyrup || 0, l.vatSua) + vOf(+l.lyNapOngHut || 0, l.vatLy) + vOf(+l.daNuoc || 0, l.vatDa);
 
     // doanh thu (có hệ số kịch bản trên LƯỢNG bán)
     const siKg = (+d.siKg || 0) * SC, leKg = (+d.leKg || 0) * SC;
@@ -187,6 +199,7 @@
     const gcDonVi = (cGas + cDien + (+g.congRang || 0)) * (1 + (+g.hongBo || 0) / 100); // khách tự mang cà phê
     const vGc = gcKg * gcDonVi;
     const bienPhi = vSi + vLe + vLy + vGc;
+    const vatBienPhi = (siKg + leKg) * vatKg + soLy * vatLyDv + gcKg * vatGiaCongKg;
 
     const laiGop = doanhThu - bienPhi;
     const khauHao = thietBi / Math.max(1, (+t.khauHaoNam || 1) * 12);
@@ -204,11 +217,9 @@
       const tr = (+th.dnVatRa || 0) / 100;
       dtThuan = th.giaDaGomVat ? doanhThu / (1 + tr) : doanhThu;
       vatRa = dtThuan * tr;
-      // VAT đầu vào: của chi phí cố định thì lấy đúng theo cột VAT từng dòng;
-      // của nguyên liệu thì theo tỉ lệ có hoá đơn (cà phê xanh mua dân không có)
-      const tv = (+th.dnVatVao || 0) / 100;
-      const nlCoHD = bienPhi * (+th.nlCoHoaDon || 0) / 100;
-      vatVao = vatOpex + (tv > 0 ? nlCoHD * tv / (1 + tv) : 0);
+      // VAT đầu vào: chi phí cố định lấy theo cột VAT từng dòng,
+      // nguyên liệu lấy theo VAT khai riêng cho từng khoản ở mục 04
+      vatVao = vatOpex + vatBienPhi;
       thueDT = Math.max(0, vatRa - vatVao);
       const loiNhuanKT = dtThuan - (bienPhi + coDinh - vatVao) - khauHao;
       thueLai = Math.max(0, loiNhuanKT) * (+th.dnTndn || 0) / 100;
@@ -260,7 +271,7 @@
       nhom, capexGoc, duPhong, quy, vonPhaiCo, thietBi, vatCapex, vatOpex, bCapex, bOpex, thangHetVatDauTu,
       coDinh, giaVonKg, giaVonLy, cXanh, cGas, cDien, cKhac, kgLoi, xanhCan, lyCaPhe,
       doanhThu, rSi, rLe, rLy, rGc, siKg, leKg, soLy, gcKg,
-      bienPhi, vSi, vLe, vLy, vGc, laiGop, laiTienMat, khauHao, laiKeToan,
+      bienPhi, vSi, vLe, vLy, vGc, laiGop, laiTienMat, khauHao, laiKeToan, vatKg, vatLyDv, vatBienPhi,
       laDN, thueDT, thueLai, tongThue, vatRa, vatVao, dtThuan, dtNam, vuotNguong, heSoNguong,
       tyLeGop, dtHoaVon, kgHoaVon, lyHoaVon, series, beMonth
     };
@@ -410,7 +421,7 @@
     const f = document.getElementById('fThue');
     f.innerHTML = '';
     f.appendChild(fieldsFor(th, 'thue', laDN
-      ? ['dnVatRa', 'dnVatVao', 'nlCoHoaDon', 'dnTndn', 'giaDaGomVat']
+      ? ['dnVatRa', 'dnVatVao', 'dnTndn', 'giaDaGomVat']
       : ['nguongMien', 'truNguong', 'hoHangHoa', 'hoAnUong', 'hoDichVu']));
 
     plRows(document.getElementById('plThue'), laDN ? [
@@ -544,6 +555,7 @@
       ['Mẻ lỗi', money(R.kgLoi), 'sub'],
       '-',
       ['Giá vốn 1 kg rang', money(R.giaVonKg) + ' đ', 'big'],
+      ['Trong đó VAT đã trả', money(R.vatKg) + ' đ' + (R.laDN ? ' — khấu trừ được' : ' — không khấu trừ'), 'sub'],
       ['Lãi gộp 1 kg bán sỉ ' + money(S.doanhThu.siGia) + ' đ', money(S.doanhThu.siGia - R.giaVonKg) + ' đ'],
       ['Lãi gộp 1 kg bán lẻ ' + money(S.doanhThu.leGia) + ' đ', money(S.doanhThu.leGia - R.giaVonKg) + ' đ']
     ]);
@@ -555,6 +567,7 @@
       ['Đá, nước', money(S.giaVonLy.daNuoc), 'sub'],
       '-',
       ['Giá vốn 1 ly', money(R.giaVonLy) + ' đ', 'big'],
+      ['Trong đó VAT đã trả', money(R.vatLyDv) + ' đ' + (R.laDN ? ' — khấu trừ được' : ' — không khấu trừ'), 'sub'],
       ['Lãi gộp 1 ly bán ' + money(S.doanhThu.lyGia) + ' đ', money(S.doanhThu.lyGia - R.giaVonLy) + ' đ'],
       ['Tỉ lệ giá vốn trên giá bán', pct(S.doanhThu.lyGia ? R.giaVonLy / S.doanhThu.lyGia * 100 : 0)]
     ]);
@@ -631,6 +644,23 @@
     ['Khói, mùi và hàng xóm', `
       <p>Quán cóc trong khu dân cư, rang vài mẻ liền là có mùi và khói. Hai cách xử lý: rang lệch giờ, hoặc lắp buồng đốt khói —
       khoản này <b>chưa nằm trong bảng</b> vì tuỳ chỗ. Nếu chủ nhà hoặc hàng xóm phản ứng thì đó là chi phí bắt buộc, cộng thêm vào mục 02.</p>`],
+    ['Số nào lấy ở đâu — tra ngày 03/11/2026', `
+      <ul>
+        <li><b>Cà phê nhân xô robusta</b> cuối tháng 10/2026 quanh <b>89.500–93.000 đ/kg</b> tại Đắk Lắk.
+        Bảng để <b>105.000</b> vì xưởng rang mua hạt sàng chọn (sàng 16/18 khoảng 100–115 k), arabica Cầu Đất
+        còn cao hơn, 150 k trở lên. Mua nhân xô rang bán sỉ thì hạ ô này xuống.</li>
+        <li><b>Gas LPG</b>: bình 45 kg tháng 8–10/2026 khoảng <b>2,1–2,5 triệu</b> → bảng tính <b>51.000 đ/kg</b>.
+        Đây là khoản tôi đặt sai ở bản đầu (32.000) — gas đã tăng mạnh trong năm 2026.</li>
+        <li><b>Điện kinh doanh</b>: giờ bình thường khoảng 2.700 đ/kWh, giờ cao điểm lên 5.000 đ/kWh;
+        bảng dùng bình quân <b>3.200 đ/kWh</b>. Quán chạy nhiều vào cao điểm thì nâng lên.</li>
+        <li><b>Lương</b>: tối thiểu vùng I từ 01/01/2026 là <b>5,31 triệu/tháng</b> (Nghị định 293/2025/NĐ-CP,
+        tăng bình quân 7,2%). Pha chế toàn thời gian ở thành phố thực trả 7,5–9 triệu nên bảng để 8 triệu;
+        bán thời gian tính ~27 k/giờ.</li>
+        <li><b>Thiết bị quán</b>: máy pha 2 group hãng phổ thông mua mới 60–90 triệu (máy cũ 35–45);
+        máy xay espresso 12–18; tủ mát 2 cánh 13–18 cộng tủ đông nhỏ 5–7; máy đá 50 kg/ngày 10–15.</li>
+      </ul>
+      <p class="tiny muted">Giá cà phê và gas đổi từng tháng. Trước khi quyết định phải lấy báo giá thật —
+      bảng này chỉ cho biết độ lớn của từng khoản.</p>`],
     ['Thuế tính thế nào trong bảng này', `
       <p><b>Hộ kinh doanh</b> (mặc định): từ 01/01/2026 bỏ thuế khoán, hộ tự kê khai. Ngưỡng doanh thu
       <b>không phải nộp GTGT và thuế thu nhập là 1 tỷ đồng/năm</b> (Nghị định 141/2026/NĐ-CP sửa Nghị định
